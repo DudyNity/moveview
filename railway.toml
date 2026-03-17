@@ -2,6 +2,6 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "node build"
+startCommand = "node migrate.js && node build"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
