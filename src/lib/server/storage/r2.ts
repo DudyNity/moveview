@@ -5,13 +5,9 @@ import {
 	DeleteObjectCommand
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import {
-	R2_ACCOUNT_ID,
-	R2_ACCESS_KEY_ID,
-	R2_SECRET_ACCESS_KEY,
-	R2_BUCKET_NAME,
-	R2_PUBLIC_URL
-} from '$env/dynamic/private';
+import { env } from '$env/dynamic/private';
+
+const { R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME, R2_PUBLIC_URL } = env;
 import { mkdirSync, writeFileSync, readFileSync, existsSync, unlinkSync } from 'fs';
 import { resolve, dirname } from 'path';
 

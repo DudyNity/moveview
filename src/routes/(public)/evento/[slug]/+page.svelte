@@ -3,7 +3,9 @@
 	import { cart, formatPrice } from '$lib/stores/cart.js';
 	import type { PageData } from './$types.js';
 	import Icon from '@iconify/svelte';
-	import { PUBLIC_APP_URL, PUBLIC_APP_NAME } from '$env/dynamic/public';
+	import { env as pubEnv } from '$env/dynamic/public';
+	const PUBLIC_APP_URL = pubEnv.PUBLIC_APP_URL;
+	const PUBLIC_APP_NAME = pubEnv.PUBLIC_APP_NAME;
 
 	interface Props { data: PageData; }
 	let { data }: Props = $props();

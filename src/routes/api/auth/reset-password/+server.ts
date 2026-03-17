@@ -4,7 +4,8 @@ import { db, schema } from '$lib/server/db/index.js';
 import { eq, and, gt } from 'drizzle-orm';
 import { hashPassword } from '$lib/server/auth/password.js';
 import { sendPasswordResetEmail } from '$lib/server/email/index.js';
-import { PUBLIC_APP_URL, PUBLIC_APP_NAME } from '$env/dynamic/public';
+import { env as pubEnv } from '$env/dynamic/public';
+const { PUBLIC_APP_URL, PUBLIC_APP_NAME } = pubEnv;
 import { randomBytes } from 'crypto';
 
 // POST /api/auth/reset-password

@@ -1,5 +1,8 @@
-import { RESEND_API_KEY, EMAIL_FROM } from '$env/dynamic/private';
-import { PUBLIC_APP_URL, PUBLIC_APP_NAME } from '$env/dynamic/public';
+import { env } from '$env/dynamic/private';
+import { env as pubEnv } from '$env/dynamic/public';
+
+const { RESEND_API_KEY, EMAIL_FROM } = env;
+const { PUBLIC_APP_URL, PUBLIC_APP_NAME } = pubEnv;
 
 const ACCENT = '#3DC90D';
 const BG = '#0a0a0f';

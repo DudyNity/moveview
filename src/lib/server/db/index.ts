@@ -1,14 +1,14 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema.js';
-import { DATABASE_URL } from '$env/dynamic/private';
+import { env } from '$env/dynamic/private';
 
 let _db: ReturnType<typeof drizzle<typeof schema>> | null = null;
 
 function getDb() {
 	if (_db) return _db;
 
-	const client = postgres(DATABASE_URL, {
+	const client = postgres(env.DATABASE_URL, {
 		max: 10,
 		idle_timeout: 20,
 		connect_timeout: 10
