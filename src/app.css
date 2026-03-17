@@ -1,0 +1,162 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Design Tokens ─────────────────────────────────────────── */
+:root {
+	--bg-base:        #050507;
+	--bg-card:        #0c0c0f;
+	--bg-elevated:    #14141a;
+	--bg-glass:       rgba(255, 255, 255, 0.035);
+	--bg-glass-hover: rgba(255, 255, 255, 0.06);
+
+	--border-color:   rgba(255, 255, 255, 0.07);
+	--border-bright:  rgba(255, 255, 255, 0.13);
+	--border-accent:  rgba(61, 201, 13, 0.35);
+
+	--text-primary:   #eeeef2;
+	--text-secondary: #b0b0c8;
+	--text-muted:     #62627a;
+
+	--accent:         #3DC90D;
+	--accent-hover:   #4DD81A;
+	--accent-glow:    rgba(61, 201, 13, 0.22);
+	--accent-subtle:  rgba(61, 201, 13, 0.08);
+
+	--radius-xs: 3px;
+	--radius-sm: 4px;
+	--radius-md: 6px;
+	--radius-lg: 8px;
+	--radius-xl: 12px;
+
+	--shadow-card:    0 4px 40px rgba(0, 0, 0, 0.55);
+	--shadow-glow:    0 0 60px rgba(61, 201, 13, 0.12);
+	--shadow-lift:    0 16px 48px rgba(0, 0, 0, 0.5);
+
+	--font-display: 'Space Grotesk', system-ui, sans-serif;
+	--font-body:    'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+	--nav-height: 64px;
+	--transition-fast:   0.18s cubic-bezier(0.4, 0, 0.2, 1);
+	--transition-smooth: 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ─── Base Reset ─────────────────────────────────────────────── */
+*, *::before, *::after {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+}
+
+html {
+	font-family: var(--font-body);
+	font-size: 16px;
+	color-scheme: dark;
+	scroll-behavior: smooth;
+}
+
+body {
+	background-color: var(--bg-base);
+	color: var(--text-primary);
+	line-height: 1.55;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	min-height: 100vh;
+	/* Subtle noise grain for depth */
+	background-image:
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+}
+
+/* ─── Typography ─────────────────────────────────────────────── */
+h1, h2, h3, h4, h5, h6 {
+	font-family: var(--font-display);
+	color: var(--text-primary);
+	font-weight: 700;
+	line-height: 1.15;
+	letter-spacing: -0.02em;
+}
+
+a { color: inherit; text-decoration: none; }
+img { max-width: 100%; height: auto; display: block; }
+button { font-family: var(--font-body); }
+
+/* ─── Scrollbar ──────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+	background: rgba(255, 255, 255, 0.07);
+	border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.12); }
+
+/* ─── Focus Ring ─────────────────────────────────────────────── */
+:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 3px;
+	border-radius: 5px;
+}
+
+/* ─── Selection ──────────────────────────────────────────────── */
+::selection {
+	background: var(--accent-glow);
+	color: var(--text-primary);
+}
+
+/* ─── Animations ─────────────────────────────────────────────── */
+@keyframes fadeUp {
+	from { opacity: 0; transform: translateY(16px); }
+	to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+	from { opacity: 0; }
+	to   { opacity: 1; }
+}
+
+@keyframes scaleIn {
+	from { opacity: 0; transform: scale(0.95); }
+	to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shimmer {
+	0%   { background-position: -200% 0; }
+	100% { background-position:  200% 0; }
+}
+
+@keyframes pulseGlow {
+	0%, 100% { opacity: 0.5; }
+	50%       { opacity: 1; }
+}
+
+@keyframes floatOrb {
+	0%, 100% { transform: translateY(0px) scale(1); }
+	50%       { transform: translateY(-20px) scale(1.03); }
+}
+
+@keyframes spin {
+	to { transform: rotate(360deg); }
+}
+
+.fade-up   { animation: fadeUp 0.5s var(--transition-smooth) forwards; }
+.fade-in   { animation: fadeIn 0.3s ease forwards; }
+.scale-in  { animation: scaleIn 0.4s var(--transition-smooth) forwards; }
+
+.skeleton {
+	background: linear-gradient(
+		90deg,
+		rgba(255,255,255,0.03) 25%,
+		rgba(255,255,255,0.07) 50%,
+		rgba(255,255,255,0.03) 75%
+	);
+	background-size: 200% 100%;
+	animation: shimmer 1.6s infinite;
+	border-radius: var(--radius-sm);
+}
+
+/* ─── Glass Utility ──────────────────────────────────────────── */
+.glass {
+	background: var(--bg-glass);
+	backdrop-filter: blur(20px) saturate(1.4);
+	-webkit-backdrop-filter: blur(20px) saturate(1.4);
+	border: 1px solid var(--border-color);
+}
