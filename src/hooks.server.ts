@@ -40,5 +40,12 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	event.locals.user = user ? { ...user, name: capitalizeName(user.name) } : null;
 	event.locals.session = session;
-	return resolve(event);
+
+	const response = await resolve(event);
+
+	if (event.url.hostname !== 'localhost') {
+		response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+	}
+
+	return response;
 };
