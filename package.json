@@ -33,9 +33,6 @@
 		"stripe": "^17.5.0",
 		"zod": "^3.24.1"
 	},
-	"overrides": {
-		"rollup": "npm:@rollup/wasm-node"
-	},
 	"devDependencies": {
 		"@sveltejs/adapter-node": "^5.5.4",
 		"@sveltejs/kit": "^2.15.1",
