@@ -1,8 +1,17 @@
 import { lucia } from '$lib/server/auth/index.js';
 import type { Handle } from '@sveltejs/kit';
 import { capitalizeName } from '$lib/utils.js';
+import { redirect } from '@sveltejs/kit';
 
 export const handle: Handle = async ({ event, resolve }) => {
+	// Força HTTPS em produção
+	if (
+		event.request.headers.get('x-forwarded-proto') === 'http' &&
+		event.url.hostname !== 'localhost'
+	) {
+		redirect(301, `https://${event.url.host}${event.url.pathname}${event.url.search}`);
+	}
+
 	const sessionId = event.cookies.get(lucia.sessionCookieName);
 
 	if (!sessionId) {
