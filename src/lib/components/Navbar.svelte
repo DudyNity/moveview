@@ -4,6 +4,7 @@
 	import CartDrawer from './CartDrawer.svelte';
 	import type { UserPublic } from '$lib/types.js';
 	import Icon from '@iconify/svelte';
+	import { scale } from 'svelte/transition';
 
 	interface Props {
 		user?: UserPublic | null;
@@ -68,7 +69,10 @@
 						<!-- svelte-ignore a11y_click_events_have_key_events -->
 						<!-- svelte-ignore a11y_no_static_element_interactions -->
 						<div class="backdrop" onclick={() => (userMenuOpen = false)}></div>
-						<div class="user-dropdown scale-in">
+						<div
+							class="user-dropdown"
+							transition:scale={{ duration: 160, start: 0.92, opacity: 0 }}
+						>
 							<div class="user-info">
 								<strong>{user.name}</strong>
 								<span>{user.email}</span>
@@ -271,6 +275,7 @@
 		position: absolute;
 		top: calc(100% + 10px);
 		right: 0;
+		transform-origin: top right;
 		background: var(--bg-card);
 		border: 1px solid var(--border-color);
 		border-radius: var(--radius-md);
