@@ -2,6 +2,6 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "node build"
+startCommand = "PORT=3000 node build"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
