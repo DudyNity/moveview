@@ -3,8 +3,8 @@ import type { Actions, PageServerLoad } from './$types.js';
 import { db, schema } from '$lib/server/db/index.js';
 import { eq } from 'drizzle-orm';
 import { createHmac } from 'crypto';
-import { RESET_TOKEN_SECRET } from '$env/static/private';
-import { PUBLIC_APP_URL, PUBLIC_APP_NAME } from '$env/static/public';
+import { RESET_TOKEN_SECRET } from '$env/dynamic/private';
+import { PUBLIC_APP_URL, PUBLIC_APP_NAME } from '$env/dynamic/public';
 import { sendPasswordResetEmail } from '$lib/server/email/index.js';
 
 export const load: PageServerLoad = async () => ({ sent: false });

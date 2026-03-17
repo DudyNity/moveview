@@ -3,8 +3,8 @@ import type { RequestHandler } from './$types.js';
 import { z } from 'zod';
 import { db, schema } from '$lib/server/db/index.js';
 import { inArray, eq } from 'drizzle-orm';
-import { STRIPE_SECRET_KEY } from '$env/static/private';
-import { PUBLIC_APP_URL } from '$env/static/public';
+import { STRIPE_SECRET_KEY } from '$env/dynamic/private';
+import { PUBLIC_APP_URL } from '$env/dynamic/public';
 import { isRateLimited } from '$lib/server/rate-limit.js';
 import {
 	RATE_LIMIT_CHECKOUT_MAX,

@@ -4,7 +4,7 @@ import { db, schema } from '$lib/server/db/index.js';
 import { eq, and, gt } from 'drizzle-orm';
 import { hashPassword } from '$lib/server/auth/password.js';
 import { sendPasswordResetEmail } from '$lib/server/email/index.js';
-import { PUBLIC_APP_URL, PUBLIC_APP_NAME } from '$env/static/public';
+import { PUBLIC_APP_URL, PUBLIC_APP_NAME } from '$env/dynamic/public';
 import { randomBytes } from 'crypto';
 
 // POST /api/auth/reset-password

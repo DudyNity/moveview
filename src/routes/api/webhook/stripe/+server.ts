@@ -2,7 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
 import { db, schema } from '$lib/server/db/index.js';
 import { eq } from 'drizzle-orm';
-import { STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET } from '$env/static/private';
+import { STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET } from '$env/dynamic/private';
 import { sendDownloadEmail } from '$lib/server/email/index.js';
 
 export const POST: RequestHandler = async ({ request }) => {

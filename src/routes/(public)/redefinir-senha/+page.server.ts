@@ -3,7 +3,7 @@ import type { Actions, PageServerLoad } from './$types.js';
 import { db, schema } from '$lib/server/db/index.js';
 import { eq } from 'drizzle-orm';
 import { createHmac } from 'crypto';
-import { RESET_TOKEN_SECRET } from '$env/static/private';
+import { RESET_TOKEN_SECRET } from '$env/dynamic/private';
 import { hashPassword } from '$lib/server/auth/password.js';
 
 export const load: PageServerLoad = async ({ url }) => {

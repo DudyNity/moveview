@@ -3,7 +3,7 @@
 	import { cart, formatPrice } from '$lib/stores/cart.js';
 	import type { PageData } from './$types.js';
 	import Icon from '@iconify/svelte';
-	import { PUBLIC_APP_URL, PUBLIC_APP_NAME } from '$env/static/public';
+	import { PUBLIC_APP_URL, PUBLIC_APP_NAME } from '$env/dynamic/public';
 
 	interface Props { data: PageData; }
 	let { data }: Props = $props();

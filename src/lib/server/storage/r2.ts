@@ -11,7 +11,7 @@ import {
 	R2_SECRET_ACCESS_KEY,
 	R2_BUCKET_NAME,
 	R2_PUBLIC_URL
-} from '$env/static/private';
+} from '$env/dynamic/private';
 import { mkdirSync, writeFileSync, readFileSync, existsSync, unlinkSync } from 'fs';
 import { resolve, dirname } from 'path';
 
