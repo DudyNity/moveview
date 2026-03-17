@@ -55,40 +55,54 @@ function applyPixelNoise(data: Buffer, width: number, height: number, seed: numb
 	}
 }
 
-function buildWatermarkSvg(width: number, height: number, seed: number): Buffer {
-	const rand = prng(seed ^ 0xabcdef);
-	const cx = width / 2;
-	const cy = height / 2;
+function buildWatermarkSvg(width: number, height: number): Buffer {
 	const minDim = Math.min(width, height);
 
-	// ── Diagonal text grid (-30°) ─────────────────────────────────────────────
-	const fs = Math.max(14, Math.round(minDim * 0.022));
-	const tw = BRAND.length * fs * 0.62 + 48;
-	const th = fs * 5.5;
-	let tiles = '';
-	for (let row = -4; row <= Math.ceil(height / th) + 4; row++) {
-		for (let col = -4; col <= Math.ceil(width / tw) + 4; col++) {
-			const x = col * tw + (row & 1 ? tw * 0.5 : 0);
-			const y = row * th;
-			const op = (0.22 + rand() * 0.06).toFixed(3);
-			tiles += `<text x="${x}" y="${y}" opacity="${op}" fill="white" font-size="${fs}" font-family="Arial,sans-serif" font-weight="700" letter-spacing="3">${BRAND}</text>`;
-		}
-	}
+	// ── Diagonal repeating pattern via SVG <pattern> — sem clipping ──────────
+	const fs = Math.max(12, Math.round(minDim * 0.020));
+	// Tamanho do tile: largura do texto + espaço, altura com gap
+	const tileW = Math.round(BRAND.length * fs * 0.60 + 60);
+	const tileH = Math.round(fs * 4.5);
 
-	// ── Bottom bar ────────────────────────────────────────────────────────────
-	const barH = Math.round(minDim * 0.055);
+	// ── Barra inferior com gradiente ─────────────────────────────────────────
+	const barH = Math.round(minDim * 0.10);
 	const barY = height - barH;
-	const barFont = Math.round(barH * 0.40);
-	const bar = `
-		<rect x="0" y="${barY}" width="${width}" height="${barH}" fill="black" opacity="0.50"/>
-		<text x="${width/2}" y="${barY + barH*0.68}" fill="white" opacity="0.80" font-size="${barFont}"
-		      font-family="Arial,sans-serif" font-weight="700" text-anchor="middle" letter-spacing="6">${BRAND}</text>
-	`;
+	const barFont = Math.round(minDim * 0.022);
+	const subFont = Math.round(barFont * 0.55);
 
 	return Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
-		<g transform="rotate(-30,${cx},${cy})">${tiles}</g>
-		${bar}
-	</svg>`);
+  <defs>
+    <pattern id="wm" x="0" y="0" width="${tileW}" height="${tileH}"
+             patternUnits="userSpaceOnUse" patternTransform="rotate(-35)">
+      <text x="0" y="${Math.round(tileH * 0.72)}"
+            fill="white" fill-opacity="0.18"
+            font-size="${fs}" font-family="Arial,Helvetica,sans-serif"
+            font-weight="700" letter-spacing="4">${BRAND}</text>
+    </pattern>
+    <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="black" stop-opacity="0"/>
+      <stop offset="100%" stop-color="black" stop-opacity="0.72"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Diagonal pattern sobre toda a imagem -->
+  <rect width="${width}" height="${height}" fill="url(#wm)"/>
+
+  <!-- Gradiente escuro na base -->
+  <rect x="0" y="${barY}" width="${width}" height="${barH}" fill="url(#barGrad)"/>
+
+  <!-- Nome da marca centralizado na base -->
+  <text x="${width / 2}" y="${barY + Math.round(barH * 0.60)}"
+        fill="white" fill-opacity="0.90"
+        font-size="${barFont}" font-family="Arial,Helvetica,sans-serif"
+        font-weight="700" text-anchor="middle" letter-spacing="8">${BRAND}</text>
+
+  <!-- Subtítulo abaixo -->
+  <text x="${width / 2}" y="${barY + Math.round(barH * 0.85)}"
+        fill="white" fill-opacity="0.55"
+        font-size="${subFont}" font-family="Arial,Helvetica,sans-serif"
+        font-weight="400" text-anchor="middle" letter-spacing="3">moveview.com.br</text>
+</svg>`);
 }
 
 async function _generateWatermarkedVersion(inputBuffer: Buffer): Promise<Buffer> {
@@ -117,7 +131,7 @@ async function _generateWatermarkedVersion(inputBuffer: Buffer): Promise<Buffer>
 
 	// ── Step 3: composite SVG watermark layers ────────────────────────────────
 	// Feed raw noised data directly into the composite pipeline (no intermediate toBuffer)
-	const wmSvg = buildWatermarkSvg(info.width, info.height, seed);
+	const wmSvg = buildWatermarkSvg(info.width, info.height);
 
 	return sharp(data, {
 		raw: { width: info.width, height: info.height, channels: 4 }
