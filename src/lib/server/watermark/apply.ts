@@ -1,22 +1,10 @@
 import sharp from 'sharp';
 import { WATERMARK_MAX_WIDTH } from '$lib/constants.js';
 
-// Desativa cache do libvips e limita a 1 worker thread
+// Desativa cache do libvips para liberar memória entre processamentos
 sharp.cache(false);
-sharp.concurrency(1);
-
-/**
- * Fila de processamento global — garante que apenas 1 imagem é processada
- * pelo Sharp por vez no nível do Node.js, independente da concorrência HTTP.
- * sharp.concurrency(1) limita threads do libvips mas não impede que múltiplas
- * Promises sejam criadas e inicializadas simultaneamente antes de chegar às threads.
- */
-let _queue = Promise.resolve();
-function withSharpQueue<T>(fn: () => Promise<T>): Promise<T> {
-	const next = _queue.then(fn, fn);
-	_queue = next.then(() => {}, () => {});
-	return next;
-}
+// Permite até 4 threads do libvips em paralelo
+sharp.concurrency(4);
 
 const BRAND = 'MOVE VIEW PHOTOS';
 
@@ -141,7 +129,7 @@ async function _generateWatermarkedVersion(inputBuffer: Buffer): Promise<Buffer>
 }
 
 export function generateWatermarkedVersion(inputBuffer: Buffer): Promise<Buffer> {
-	return withSharpQueue(() => _generateWatermarkedVersion(inputBuffer));
+	return _generateWatermarkedVersion(inputBuffer);
 }
 
 export async function processUploadedPhoto(inputBuffer: Buffer): Promise<{
@@ -154,11 +142,13 @@ export async function processUploadedPhoto(inputBuffer: Buffer): Promise<{
 	const width  = meta.width  ?? 0;
 	const height = meta.height ?? 0;
 
-	// Se já é JPEG, salva o buffer diretamente — evita decode raw (~70-100MB) + re-encode.
-	// Para outros formatos (PNG, TIFF, WebP) converte para JPEG.
-	const original = meta.format === 'jpeg'
-		? inputBuffer
-		: await sharp(inputBuffer).jpeg({ quality: 95 }).toBuffer();
+	// Comprime o original para JPEG 88% — reduz tamanho do upload sem perda visível.
+	// Para TIFF/PNG/WebP converte também.
+	const maxOriginalW = 3000; // cap de 3000px de largura para originais
+	const needsResize = (meta.width ?? 0) > maxOriginalW;
+	const originalPipeline = sharp(inputBuffer);
+	if (needsResize) originalPipeline.resize(maxOriginalW, undefined, { fit: 'inside', withoutEnlargement: true });
+	const original = await originalPipeline.jpeg({ quality: 88, progressive: true }).toBuffer();
 
 	// Watermark sempre recalculado (resize para 900px — memória gerenciável)
 	const watermarked = await generateWatermarkedVersion(inputBuffer);

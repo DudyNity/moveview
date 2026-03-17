@@ -70,8 +70,8 @@
 		}
 	}
 
-	// 3 uploads simultâneos — seguro com heap de 4GB e Sharp.cache(false)
-	const CONCURRENCY = 3;
+	// 5 uploads simultâneos
+	const CONCURRENCY = 5;
 
 	async function uploadOne(item: UploadFile) {
 		patchItem(item.id, { status: 'uploading' });
