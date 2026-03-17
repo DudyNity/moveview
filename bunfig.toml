@@ -1,0 +1,7 @@
+[install]
+# Use flat node_modules (node-modules linker) to ensure compatibility
+# This avoids hardlink issues on Windows with cross-drive projects
+nodeLinker = "node-modules"
+
+[run]
+bun = true
