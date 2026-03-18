@@ -58,75 +58,109 @@ function applyPixelNoise(data: Buffer, width: number, height: number, seed: numb
 
 function buildWatermarkSvg(width: number, height: number): Buffer {
 	const minDim = Math.min(width, height);
+	const cx = width  / 2;
+	const cy = height / 2;
 
-	// ── Camada 1: micro-padrão M\ diagonal (quase textura) ───────────────────
-	const microFs  = Math.max(10, Math.round(minDim * 0.016));
-	const microTileW = Math.round(microFs * 3.2);
-	const microTileH = Math.round(microFs * 3.8);
+	// ── Micro-padrão M\ (fundo denso) ────────────────────────────────────────
+	const mFs = Math.max(11, Math.round(minDim * 0.018));
+	const mTW = Math.round(mFs * 3.0);
+	const mTH = Math.round(mFs * 3.5);
 
-	// ── Camada 2: barra inferior com gradiente ────────────────────────────────
-	const barH    = Math.round(minDim * 0.095);
+	// ── Linha de símbolos M\ superior e inferior ──────────────────────────────
+	const rowFs  = Math.max(16, Math.round(minDim * 0.028));
+	const rowY1  = Math.round(height * 0.12);
+	const rowY2  = Math.round(height * 0.88);
+	const rowGap = Math.round(width  * 0.22);
+	const rowPositions = [
+		Math.round(width * 0.10),
+		Math.round(width * 0.10) + rowGap,
+		Math.round(width * 0.10) + rowGap * 2,
+		Math.round(width * 0.10) + rowGap * 3,
+	];
+
+	// ── Caixa central ─────────────────────────────────────────────────────────
+	const boxW  = Math.round(width  * 0.38);
+	const boxH  = Math.round(minDim * 0.14);
+	const boxX  = cx - boxW / 2;
+	const boxY  = cy - boxH / 2;
+	const bFont = Math.round(minDim * 0.038);
+	const bSub  = Math.round(bFont  * 0.42);
+	// bordas levemente orgânicas (imperfeitas — impossível de reconstruir por inpainting)
+	const d = 1.2; // variação em px
+	const boxPath = `M${boxX+d},${boxY-d} L${boxX+boxW+d},${boxY+d} L${boxX+boxW-d},${boxY+boxH+d} L${boxX-d},${boxY+boxH-d} Z`;
+
+	// ── Barra inferior sólida ─────────────────────────────────────────────────
+	const barH    = Math.round(minDim * 0.085);
 	const barY    = height - barH;
-	const barFont = Math.round(minDim * 0.024);
-	const subFont = Math.round(barFont * 0.52);
-	const lineY   = barY + Math.round(barH * 0.28); // linha decorativa fina
+	const barFont = Math.round(minDim * 0.022);
+	const barSub  = Math.round(barFont * 0.50);
 
-	// ── Camada 3: assinatura canto superior direito ───────────────────────────
-	const sigFont = Math.round(minDim * 0.030);
-	const sigX    = width  - Math.round(minDim * 0.04);
-	const sigY    = Math.round(minDim * 0.06);
-	const lineLen = Math.round(sigFont * 1.1);
+	// ── Linhas diagonais extras (anti-crop) ───────────────────────────────────
+	const diagLen = Math.round(Math.sqrt(width * width + height * height));
+
+	const rowSymbols = rowPositions.map(x =>
+		`<text x="${x}" y="%Y" fill="white" fill-opacity="0.22"
+		       font-size="${rowFs}" font-family="Arial,Helvetica,sans-serif"
+		       font-weight="700" letter-spacing="2">${SYMBOL}</text>`
+	).join('');
 
 	return Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
   <defs>
-    <!-- Micro-padrão M\ diagonal -->
-    <pattern id="micro" x="0" y="0" width="${microTileW}" height="${microTileH}"
-             patternUnits="userSpaceOnUse" patternTransform="rotate(-22) skewX(2)">
-      <text x="2" y="${Math.round(microTileH * 0.78)}"
-            fill="white" fill-opacity="0.10"
-            font-size="${microFs}" font-family="Arial,Helvetica,sans-serif"
+    <pattern id="micro" x="0" y="0" width="${mTW}" height="${mTH}"
+             patternUnits="userSpaceOnUse" patternTransform="rotate(-20) skewX(1.5)">
+      <text x="1" y="${Math.round(mTH * 0.80)}"
+            fill="white" fill-opacity="0.12"
+            font-size="${mFs}" font-family="Arial,Helvetica,sans-serif"
             font-weight="700">${SYMBOL}</text>
     </pattern>
-    <!-- Gradiente barra inferior -->
     <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%"   stop-color="black" stop-opacity="0"/>
-      <stop offset="55%"  stop-color="black" stop-opacity="0.55"/>
-      <stop offset="100%" stop-color="black" stop-opacity="0.78"/>
+      <stop offset="45%"  stop-color="black" stop-opacity="0.60"/>
+      <stop offset="100%" stop-color="black" stop-opacity="0.85"/>
     </linearGradient>
   </defs>
 
-  <!-- CAMADA 1: micro-padrão textura M\ -->
+  <!-- CAMADA 1: micro-padrão M\ textura densa -->
   <rect width="${width}" height="${height}" fill="url(#micro)"/>
 
-  <!-- CAMADA 2: gradiente + barra inferior -->
+  <!-- CAMADA 2: linhas diagonais finas anti-crop -->
+  <line x1="${cx - diagLen}" y1="${cy}" x2="${cx + diagLen}" y2="${cy}"
+        stroke="white" stroke-opacity="0.06" stroke-width="0.8"
+        transform="rotate(-30 ${cx} ${cy})"/>
+  <line x1="${cx - diagLen}" y1="${cy}" x2="${cx + diagLen}" y2="${cy}"
+        stroke="white" stroke-opacity="0.06" stroke-width="0.8"
+        transform="rotate(30 ${cx} ${cy})"/>
+
+  <!-- CAMADA 3: linha superior M\ M\ M\ M\ -->
+  ${rowSymbols.replace(/%Y/g, String(rowY1))}
+
+  <!-- CAMADA 4: caixa central com bordas orgânicas -->
+  <path d="${boxPath}" fill="black" fill-opacity="0.42" stroke="white" stroke-opacity="0.30" stroke-width="0.8"/>
+  <text x="${cx}" y="${cy - Math.round(bFont * 0.10)}"
+        fill="white" fill-opacity="0.88"
+        font-size="${bFont}" font-family="Arial,Helvetica,sans-serif"
+        font-weight="800" text-anchor="middle" letter-spacing="6">MOVE VIEW</text>
+  <text x="${cx}" y="${cy + Math.round(bFont * 0.95)}"
+        fill="white" fill-opacity="0.65"
+        font-size="${bSub}" font-family="Arial,Helvetica,sans-serif"
+        font-weight="400" text-anchor="middle" letter-spacing="10">PHOTOS</text>
+
+  <!-- CAMADA 5: linha inferior M\ M\ M\ M\ -->
+  ${rowSymbols.replace(/%Y/g, String(rowY2))}
+
+  <!-- CAMADA 6: barra inferior -->
   <rect x="0" y="${barY}" width="${width}" height="${barH}" fill="url(#barGrad)"/>
-
-  <!-- linha decorativa fina acima do texto -->
-  <line x1="${Math.round(width * 0.08)}" y1="${lineY}"
-        x2="${Math.round(width * 0.92)}" y2="${lineY}"
-        stroke="white" stroke-opacity="0.20" stroke-width="0.5"/>
-
-  <!-- nome da marca -->
-  <text x="${width / 2}" y="${barY + Math.round(barH * 0.60)}"
-        fill="white" fill-opacity="0.92"
+  <line x1="${Math.round(width*0.06)}" y1="${barY + Math.round(barH*0.28)}"
+        x2="${Math.round(width*0.94)}" y2="${barY + Math.round(barH*0.28)}"
+        stroke="white" stroke-opacity="0.15" stroke-width="0.5"/>
+  <text x="${cx}" y="${barY + Math.round(barH*0.64)}"
+        fill="white" fill-opacity="0.90"
         font-size="${barFont}" font-family="Arial,Helvetica,sans-serif"
-        font-weight="700" text-anchor="middle" letter-spacing="10">${BRAND}</text>
-
-  <!-- url abaixo -->
-  <text x="${width / 2}" y="${barY + Math.round(barH * 0.84)}"
-        fill="white" fill-opacity="0.45"
-        font-size="${subFont}" font-family="Arial,Helvetica,sans-serif"
-        font-weight="400" text-anchor="middle" letter-spacing="2">moveview.com.br</text>
-
-  <!-- CAMADA 3: assinatura M\ canto superior direito -->
-  <text x="${sigX}" y="${sigY}"
-        fill="white" fill-opacity="0.28"
-        font-size="${sigFont}" font-family="Arial,Helvetica,sans-serif"
-        font-weight="700" text-anchor="end">${SYMBOL}</text>
-  <!-- linha fina abaixo do símbolo -->
-  <line x1="${sigX - lineLen}" y1="${sigY + Math.round(sigFont * 0.18)}"
-        x2="${sigX}"           y2="${sigY + Math.round(sigFont * 0.18)}"
-        stroke="white" stroke-opacity="0.18" stroke-width="0.8"/>
+        font-weight="700" text-anchor="middle" letter-spacing="8">${BRAND}</text>
+  <text x="${cx}" y="${barY + Math.round(barH*0.88)}"
+        fill="white" fill-opacity="0.40"
+        font-size="${barSub}" font-family="Arial,Helvetica,sans-serif"
+        font-weight="400" text-anchor="middle" letter-spacing="3">moveview.com.br</text>
 </svg>`);
 }
 
