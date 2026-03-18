@@ -16,6 +16,26 @@
 	let sportValue = $state(form?.values?.sport ?? '');
 	let isDragging = $state(false);
 
+	function maskCurrency(raw: string): string {
+		const digits = raw.replace(/\D/g, '').replace(/^0+/, '') || '0';
+		const padded = digits.padStart(3, '0');
+		const reais = padded.slice(0, -2).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+		const centavos = padded.slice(-2);
+		return `${reais},${centavos}`;
+	}
+
+	function onPriceInput(e: Event) {
+		const input = e.target as HTMLInputElement;
+		input.value = maskCurrency(input.value);
+	}
+
+	const defaultPhotoPrice = maskCurrency(
+		form?.values?.photoPrice ? String(Math.round(parseFloat(String(form.values.photoPrice).replace(',', '.')) * 100)) : '999'
+	);
+	const defaultPackagePrice = form?.values?.packagePrice
+		? maskCurrency(String(Math.round(parseFloat(String(form.values.packagePrice).replace(',', '.')) * 100)))
+		: '';
+
 	function onCoverChange(e: Event) {
 		const file = (e.target as HTMLInputElement).files?.[0];
 		if (!file) { coverPreview = null; return; }
@@ -195,11 +215,11 @@
 						<input
 							id="photoPrice"
 							name="photoPrice"
-							type="number"
-							step="0.01"
-							min="1"
-							placeholder="29.00"
-							value={form?.values?.photoPrice ?? '29.00'}
+							type="text"
+							inputmode="numeric"
+							placeholder="9,99"
+							value={defaultPhotoPrice}
+							oninput={onPriceInput}
 						/>
 					</div>
 				</div>
@@ -214,11 +234,11 @@
 						<input
 							id="packagePrice"
 							name="packagePrice"
-							type="number"
-							step="0.01"
-							min="0"
-							placeholder="49.90"
-							value={form?.values?.packagePrice ?? ''}
+							type="text"
+							inputmode="numeric"
+							placeholder="49,90"
+							value={defaultPackagePrice}
+							oninput={onPriceInput}
 						/>
 					</div>
 					<span class="field-hint"><Icon icon="lucide:info" width="11" /> Todas as fotos do evento</span>
