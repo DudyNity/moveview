@@ -7,6 +7,7 @@ sharp.cache(false);
 sharp.concurrency(4);
 
 const BRAND = 'MOVE VIEW PHOTOS';
+const SYMBOL = 'M\\'; // símbolo M\ — velocidade + inicial
 
 /** Fast deterministic hash → seed */
 function imageSeed(buf: Buffer): number {
@@ -58,50 +59,74 @@ function applyPixelNoise(data: Buffer, width: number, height: number, seed: numb
 function buildWatermarkSvg(width: number, height: number): Buffer {
 	const minDim = Math.min(width, height);
 
-	// ── Diagonal repeating pattern via SVG <pattern> — sem clipping ──────────
-	const fs = Math.max(12, Math.round(minDim * 0.020));
-	// Tamanho do tile: largura do texto + espaço, altura com gap
-	const tileW = Math.round(BRAND.length * fs * 0.60 + 60);
-	const tileH = Math.round(fs * 4.5);
+	// ── Camada 1: micro-padrão M\ diagonal (quase textura) ───────────────────
+	const microFs  = Math.max(10, Math.round(minDim * 0.016));
+	const microTileW = Math.round(microFs * 3.2);
+	const microTileH = Math.round(microFs * 3.8);
 
-	// ── Barra inferior com gradiente ─────────────────────────────────────────
-	const barH = Math.round(minDim * 0.10);
-	const barY = height - barH;
-	const barFont = Math.round(minDim * 0.022);
-	const subFont = Math.round(barFont * 0.55);
+	// ── Camada 2: barra inferior com gradiente ────────────────────────────────
+	const barH    = Math.round(minDim * 0.095);
+	const barY    = height - barH;
+	const barFont = Math.round(minDim * 0.024);
+	const subFont = Math.round(barFont * 0.52);
+	const lineY   = barY + Math.round(barH * 0.28); // linha decorativa fina
+
+	// ── Camada 3: assinatura canto superior direito ───────────────────────────
+	const sigFont = Math.round(minDim * 0.030);
+	const sigX    = width  - Math.round(minDim * 0.04);
+	const sigY    = Math.round(minDim * 0.06);
+	const lineLen = Math.round(sigFont * 1.1);
 
 	return Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
   <defs>
-    <pattern id="wm" x="0" y="0" width="${tileW}" height="${tileH}"
-             patternUnits="userSpaceOnUse" patternTransform="rotate(-35)">
-      <text x="0" y="${Math.round(tileH * 0.72)}"
-            fill="white" fill-opacity="0.18"
-            font-size="${fs}" font-family="Arial,Helvetica,sans-serif"
-            font-weight="700" letter-spacing="4">${BRAND}</text>
+    <!-- Micro-padrão M\ diagonal -->
+    <pattern id="micro" x="0" y="0" width="${microTileW}" height="${microTileH}"
+             patternUnits="userSpaceOnUse" patternTransform="rotate(-22) skewX(2)">
+      <text x="2" y="${Math.round(microTileH * 0.78)}"
+            fill="white" fill-opacity="0.10"
+            font-size="${microFs}" font-family="Arial,Helvetica,sans-serif"
+            font-weight="700">${SYMBOL}</text>
     </pattern>
+    <!-- Gradiente barra inferior -->
     <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="black" stop-opacity="0"/>
-      <stop offset="100%" stop-color="black" stop-opacity="0.72"/>
+      <stop offset="0%"   stop-color="black" stop-opacity="0"/>
+      <stop offset="55%"  stop-color="black" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="black" stop-opacity="0.78"/>
     </linearGradient>
   </defs>
 
-  <!-- Diagonal pattern sobre toda a imagem -->
-  <rect width="${width}" height="${height}" fill="url(#wm)"/>
+  <!-- CAMADA 1: micro-padrão textura M\ -->
+  <rect width="${width}" height="${height}" fill="url(#micro)"/>
 
-  <!-- Gradiente escuro na base -->
+  <!-- CAMADA 2: gradiente + barra inferior -->
   <rect x="0" y="${barY}" width="${width}" height="${barH}" fill="url(#barGrad)"/>
 
-  <!-- Nome da marca centralizado na base -->
-  <text x="${width / 2}" y="${barY + Math.round(barH * 0.60)}"
-        fill="white" fill-opacity="0.90"
-        font-size="${barFont}" font-family="Arial,Helvetica,sans-serif"
-        font-weight="700" text-anchor="middle" letter-spacing="8">${BRAND}</text>
+  <!-- linha decorativa fina acima do texto -->
+  <line x1="${Math.round(width * 0.08)}" y1="${lineY}"
+        x2="${Math.round(width * 0.92)}" y2="${lineY}"
+        stroke="white" stroke-opacity="0.20" stroke-width="0.5"/>
 
-  <!-- Subtítulo abaixo -->
-  <text x="${width / 2}" y="${barY + Math.round(barH * 0.85)}"
-        fill="white" fill-opacity="0.55"
+  <!-- nome da marca -->
+  <text x="${width / 2}" y="${barY + Math.round(barH * 0.60)}"
+        fill="white" fill-opacity="0.92"
+        font-size="${barFont}" font-family="Arial,Helvetica,sans-serif"
+        font-weight="700" text-anchor="middle" letter-spacing="10">${BRAND}</text>
+
+  <!-- url abaixo -->
+  <text x="${width / 2}" y="${barY + Math.round(barH * 0.84)}"
+        fill="white" fill-opacity="0.45"
         font-size="${subFont}" font-family="Arial,Helvetica,sans-serif"
-        font-weight="400" text-anchor="middle" letter-spacing="3">moveview.com.br</text>
+        font-weight="400" text-anchor="middle" letter-spacing="2">moveview.com.br</text>
+
+  <!-- CAMADA 3: assinatura M\ canto superior direito -->
+  <text x="${sigX}" y="${sigY}"
+        fill="white" fill-opacity="0.28"
+        font-size="${sigFont}" font-family="Arial,Helvetica,sans-serif"
+        font-weight="700" text-anchor="end">${SYMBOL}</text>
+  <!-- linha fina abaixo do símbolo -->
+  <line x1="${sigX - lineLen}" y1="${sigY + Math.round(sigFont * 0.18)}"
+        x2="${sigX}"           y2="${sigY + Math.round(sigFont * 0.18)}"
+        stroke="white" stroke-opacity="0.18" stroke-width="0.8"/>
 </svg>`);
 }
 
@@ -137,7 +162,7 @@ async function _generateWatermarkedVersion(inputBuffer: Buffer): Promise<Buffer>
 		raw: { width: info.width, height: info.height, channels: 4 }
 	})
 		.removeAlpha()
-		.composite([{ input: wmSvg, gravity: 'center', blend: 'over' }])
+		.composite([{ input: wmSvg, gravity: 'center', blend: 'soft-light' }])
 		.jpeg({ quality: 60, progressive: true })
 		.toBuffer();
 }
