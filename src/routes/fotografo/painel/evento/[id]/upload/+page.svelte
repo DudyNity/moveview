@@ -193,6 +193,8 @@
 	const uploadingCount = $derived(uploadQueue.filter((f) => f.status === 'uploading').length);
 	const doneCount = $derived(uploadQueue.filter((f) => f.status === 'done').length);
 	const errorCount = $derived(uploadQueue.filter((f) => f.status === 'error').length);
+	const totalCount = $derived(uploadQueue.length);
+	const progressPct = $derived(totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0);
 </script>
 
 <svelte:head>
@@ -261,6 +263,15 @@
 					{/if}
 				</div>
 			</div>
+
+			{#if isUploading || (doneCount > 0 && doneCount < totalCount)}
+				<div class="progress-wrap">
+					<div class="progress-bar">
+						<div class="progress-fill" style="width: {progressPct}%"></div>
+					</div>
+					<span class="progress-label">{doneCount} / {totalCount} — {progressPct}%</span>
+				</div>
+			{/if}
 
 			<div class="queue-grid">
 				{#each uploadQueue as item (item.id)}
@@ -563,5 +574,33 @@
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
+	}
+
+	.progress-wrap {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		margin-bottom: 16px;
+	}
+
+	.progress-bar {
+		flex: 1;
+		height: 6px;
+		background: var(--bg-elevated);
+		border-radius: 99px;
+		overflow: hidden;
+	}
+
+	.progress-fill {
+		height: 100%;
+		background: var(--accent);
+		border-radius: 99px;
+		transition: width 0.3s ease;
+	}
+
+	.progress-label {
+		font-size: 0.78rem;
+		color: var(--text-muted);
+		white-space: nowrap;
 	}
 </style>
