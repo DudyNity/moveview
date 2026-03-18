@@ -14,7 +14,7 @@
 
 	let loading = $state(false);
 	let coverPreview = $state<string | null>(null);
-	let sportValue = $state(form?.values?.sport ?? '');
+	let sportValue = $state(form?.values?.sport?.toString() ?? '');
 	let isDragging = $state(false);
 
 	function maskCurrency(raw: string): string {
@@ -145,7 +145,7 @@
 					<DatePicker
 						id="eventDate"
 						name="eventDate"
-						value={form?.values?.eventDate ?? ''}
+						value={form?.values?.eventDate?.toString() ?? ''}
 						required
 					/>
 				</div>
