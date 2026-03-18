@@ -156,13 +156,10 @@ export async function processUploadedPhoto(inputBuffer: Buffer): Promise<{
 	const width  = meta.width  ?? 0;
 	const height = meta.height ?? 0;
 
-	// Comprime o original para JPEG 88% — reduz tamanho do upload sem perda visível.
-	// Para TIFF/PNG/WebP converte também.
-	const maxOriginalW = 3000; // cap de 3000px de largura para originais
-	const needsResize = (meta.width ?? 0) > maxOriginalW;
-	const originalPipeline = sharp(inputBuffer);
-	if (needsResize) originalPipeline.resize(maxOriginalW, undefined, { fit: 'inside', withoutEnlargement: true });
-	const original = await originalPipeline.jpeg({ quality: 88, progressive: true }).toBuffer();
+	// Imagem já chegou comprimida pelo browser — só converte se não for JPEG
+	const original = meta.format === 'jpeg'
+		? inputBuffer
+		: await sharp(inputBuffer).jpeg({ quality: 88 }).toBuffer();
 
 	// Watermark sempre recalculado (resize para 900px — memória gerenciável)
 	const watermarked = await generateWatermarkedVersion(inputBuffer);

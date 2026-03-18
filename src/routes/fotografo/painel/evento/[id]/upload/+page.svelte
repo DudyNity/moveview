@@ -45,9 +45,34 @@
 		(e.target as HTMLInputElement).value = '';
 	}
 
+	/** Comprime imagem no browser antes de enviar — reduz 10MB→1-2MB */
+	async function compressImage(file: File): Promise<File> {
+		return new Promise((resolve) => {
+			const img = new Image();
+			const url = URL.createObjectURL(file);
+			img.onload = () => {
+				URL.revokeObjectURL(url);
+				const MAX_W = 2400;
+				const scale = Math.min(1, MAX_W / img.width);
+				const w = Math.round(img.width * scale);
+				const h = Math.round(img.height * scale);
+				const canvas = document.createElement('canvas');
+				canvas.width = w;
+				canvas.height = h;
+				canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
+				canvas.toBlob(
+					(blob) => resolve(blob ? new File([blob], file.name.replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg' }) : file),
+					'image/jpeg',
+					0.88
+				);
+			};
+			img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+			img.src = url;
+		});
+	}
+
 	function addFiles(files: File[]) {
 		const images = files.filter((f) => f.type.startsWith('image/'));
-		// Sem URL.createObjectURL — evita decodificação em massa no browser
 		const newItems: UploadFile[] = images.map((f) => ({
 			id: Math.random().toString(36).slice(2),
 			file: f,
@@ -76,13 +101,15 @@
 	async function uploadOne(item: UploadFile) {
 		patchItem(item.id, { status: 'uploading' });
 
-		// Timeout de 3 minutos por arquivo — fotos grandes precisam de tempo para processar
 		const controller = new AbortController();
 		const timeout = setTimeout(() => controller.abort(), 3 * 60_000);
 
 		try {
+			// Comprime no browser antes de enviar (10MB → ~1MB)
+			const compressed = await compressImage(item.file);
+
 			const formData = new FormData();
-			formData.append('file', item.file);
+			formData.append('file', compressed);
 			formData.append('eventId', data.event.id);
 			formData.append('price', String(data.event.photoPrice));
 
