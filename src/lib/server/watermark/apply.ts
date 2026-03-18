@@ -61,106 +61,114 @@ function buildWatermarkSvg(width: number, height: number): Buffer {
 	const cx = width  / 2;
 	const cy = height / 2;
 
-	// ── Micro-padrão M\ (fundo denso) ────────────────────────────────────────
-	const mFs = Math.max(11, Math.round(minDim * 0.018));
-	const mTW = Math.round(mFs * 3.0);
-	const mTH = Math.round(mFs * 3.5);
+	// ── Dimensões base ────────────────────────────────────────────────────────
+	const margin  = Math.round(minDim * 0.04);   // margem das bordas
+	const corner  = Math.round(minDim * 0.07);   // tamanho do L de canto
+	const stroke  = Math.max(1.5, minDim * 0.002);
 
-	// ── Linha de símbolos M\ superior e inferior ──────────────────────────────
-	const rowFs  = Math.max(16, Math.round(minDim * 0.028));
-	const rowY1  = Math.round(height * 0.12);
-	const rowY2  = Math.round(height * 0.88);
-	const rowGap = Math.round(width  * 0.22);
-	const rowPositions = [
-		Math.round(width * 0.10),
-		Math.round(width * 0.10) + rowGap,
-		Math.round(width * 0.10) + rowGap * 2,
-		Math.round(width * 0.10) + rowGap * 3,
-	];
+	// ── Fontes ────────────────────────────────────────────────────────────────
+	const urlFont    = Math.max(13, Math.round(minDim * 0.022));
+	const sideFont   = Math.max(11, Math.round(minDim * 0.018));
+	const badgeSize  = Math.round(minDim * 0.08);
+	const legalFont  = Math.max(10, Math.round(minDim * 0.016));
 
-	// ── Caixa central ─────────────────────────────────────────────────────────
-	const boxW  = Math.round(width  * 0.38);
-	const boxH  = Math.round(minDim * 0.14);
-	const boxX  = cx - boxW / 2;
-	const boxY  = cy - boxH / 2;
-	const bFont = Math.round(minDim * 0.038);
-	const bSub  = Math.round(bFont  * 0.42);
-	// bordas levemente orgânicas (imperfeitas — impossível de reconstruir por inpainting)
-	const d = 1.2; // variação em px
-	const boxPath = `M${boxX+d},${boxY-d} L${boxX+boxW+d},${boxY+d} L${boxX+boxW-d},${boxY+boxH+d} L${boxX-d},${boxY+boxH-d} Z`;
+	// ── Badge NO PRINT ────────────────────────────────────────────────────────
+	const badgeX  = Math.round(width  * 0.08);
+	const badgeY  = Math.round(height * 0.72);
+	const badgeW  = Math.round(badgeSize * 1.5);
+	const badgeH  = Math.round(badgeSize * 1.8);
+	const legalX  = badgeX + badgeW + Math.round(minDim * 0.015);
+	const legalLH = Math.round(legalFont * 1.5);
 
-	// ── Barra inferior sólida ─────────────────────────────────────────────────
-	const barH    = Math.round(minDim * 0.085);
-	const barY    = height - barH;
-	const barFont = Math.round(minDim * 0.022);
-	const barSub  = Math.round(barFont * 0.50);
-
-	// ── Linhas diagonais extras (anti-crop) ───────────────────────────────────
-	const diagLen = Math.round(Math.sqrt(width * width + height * height));
-
-	const rowSymbols = rowPositions.map(x =>
-		`<text x="${x}" y="%Y" fill="white" fill-opacity="0.22"
-		       font-size="${rowFs}" font-family="Arial,Helvetica,sans-serif"
-		       font-weight="700" letter-spacing="2">${SYMBOL}</text>`
-	).join('');
+	// ── Texto lateral (vertical) ──────────────────────────────────────────────
+	const sideY  = Math.round(height * 0.5);
+	const sideXL = Math.round(width  * 0.025);
+	const sideXR = Math.round(width  * 0.975);
 
 	return Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
-  <defs>
-    <pattern id="micro" x="0" y="0" width="${mTW}" height="${mTH}"
-             patternUnits="userSpaceOnUse" patternTransform="rotate(-20) skewX(1.5)">
-      <text x="1" y="${Math.round(mTH * 0.80)}"
-            fill="white" fill-opacity="0.12"
-            font-size="${mFs}" font-family="Arial,Helvetica,sans-serif"
-            font-weight="700">${SYMBOL}</text>
-    </pattern>
-    <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%"   stop-color="black" stop-opacity="0"/>
-      <stop offset="45%"  stop-color="black" stop-opacity="0.60"/>
-      <stop offset="100%" stop-color="black" stop-opacity="0.85"/>
-    </linearGradient>
-  </defs>
 
-  <!-- CAMADA 1: micro-padrão M\ textura densa -->
-  <rect width="${width}" height="${height}" fill="url(#micro)"/>
+  <!-- ── CANTOS: marcas de recorte ── -->
+  <!-- topo esquerdo -->
+  <line x1="${margin}" y1="${margin}" x2="${margin + corner}" y2="${margin}"
+        stroke="white" stroke-opacity="0.70" stroke-width="${stroke}"/>
+  <line x1="${margin}" y1="${margin}" x2="${margin}" y2="${margin + corner}"
+        stroke="white" stroke-opacity="0.70" stroke-width="${stroke}"/>
+  <!-- topo direito -->
+  <line x1="${width - margin}" y1="${margin}" x2="${width - margin - corner}" y2="${margin}"
+        stroke="white" stroke-opacity="0.70" stroke-width="${stroke}"/>
+  <line x1="${width - margin}" y1="${margin}" x2="${width - margin}" y2="${margin + corner}"
+        stroke="white" stroke-opacity="0.70" stroke-width="${stroke}"/>
+  <!-- baixo esquerdo -->
+  <line x1="${margin}" y1="${height - margin}" x2="${margin + corner}" y2="${height - margin}"
+        stroke="white" stroke-opacity="0.70" stroke-width="${stroke}"/>
+  <line x1="${margin}" y1="${height - margin}" x2="${margin}" y2="${height - margin - corner}"
+        stroke="white" stroke-opacity="0.70" stroke-width="${stroke}"/>
+  <!-- baixo direito -->
+  <line x1="${width - margin}" y1="${height - margin}" x2="${width - margin - corner}" y2="${height - margin}"
+        stroke="white" stroke-opacity="0.70" stroke-width="${stroke}"/>
+  <line x1="${width - margin}" y1="${height - margin}" x2="${width - margin}" y2="${height - margin - corner}"
+        stroke="white" stroke-opacity="0.70" stroke-width="${stroke}"/>
 
-  <!-- CAMADA 2: linhas diagonais finas anti-crop -->
-  <line x1="${cx - diagLen}" y1="${cy}" x2="${cx + diagLen}" y2="${cy}"
-        stroke="white" stroke-opacity="0.06" stroke-width="0.8"
-        transform="rotate(-30 ${cx} ${cy})"/>
-  <line x1="${cx - diagLen}" y1="${cy}" x2="${cx + diagLen}" y2="${cy}"
-        stroke="white" stroke-opacity="0.06" stroke-width="0.8"
-        transform="rotate(30 ${cx} ${cy})"/>
-
-  <!-- CAMADA 3: linha superior M\ M\ M\ M\ -->
-  ${rowSymbols.replace(/%Y/g, String(rowY1))}
-
-  <!-- CAMADA 4: caixa central com bordas orgânicas -->
-  <path d="${boxPath}" fill="black" fill-opacity="0.42" stroke="white" stroke-opacity="0.30" stroke-width="0.8"/>
-  <text x="${cx}" y="${cy - Math.round(bFont * 0.10)}"
-        fill="white" fill-opacity="0.88"
-        font-size="${bFont}" font-family="Arial,Helvetica,sans-serif"
-        font-weight="800" text-anchor="middle" letter-spacing="6">MOVE VIEW</text>
-  <text x="${cx}" y="${cy + Math.round(bFont * 0.95)}"
+  <!-- ── URL TOPO ── -->
+  <text x="${cx}" y="${margin + Math.round(urlFont * 1.2)}"
         fill="white" fill-opacity="0.65"
-        font-size="${bSub}" font-family="Arial,Helvetica,sans-serif"
-        font-weight="400" text-anchor="middle" letter-spacing="10">PHOTOS</text>
+        font-size="${urlFont}" font-family="Arial,Helvetica,sans-serif"
+        font-weight="600" text-anchor="middle" letter-spacing="3">moveview.com.br</text>
 
-  <!-- CAMADA 5: linha inferior M\ M\ M\ M\ -->
-  ${rowSymbols.replace(/%Y/g, String(rowY2))}
+  <!-- ── TEXTO LATERAL ESQUERDO (vertical) ── -->
+  <text transform="translate(${sideXL},${sideY}) rotate(-90)"
+        fill="white" fill-opacity="0.30"
+        font-size="${sideFont}" font-family="Arial,Helvetica,sans-serif"
+        font-weight="700" text-anchor="middle" letter-spacing="4">MOVE VIEW PHOTOS</text>
 
-  <!-- CAMADA 6: barra inferior -->
-  <rect x="0" y="${barY}" width="${width}" height="${barH}" fill="url(#barGrad)"/>
-  <line x1="${Math.round(width*0.06)}" y1="${barY + Math.round(barH*0.28)}"
-        x2="${Math.round(width*0.94)}" y2="${barY + Math.round(barH*0.28)}"
-        stroke="white" stroke-opacity="0.15" stroke-width="0.5"/>
-  <text x="${cx}" y="${barY + Math.round(barH*0.64)}"
-        fill="white" fill-opacity="0.90"
-        font-size="${barFont}" font-family="Arial,Helvetica,sans-serif"
-        font-weight="700" text-anchor="middle" letter-spacing="8">${BRAND}</text>
-  <text x="${cx}" y="${barY + Math.round(barH*0.88)}"
-        fill="white" fill-opacity="0.40"
-        font-size="${barSub}" font-family="Arial,Helvetica,sans-serif"
-        font-weight="400" text-anchor="middle" letter-spacing="3">moveview.com.br</text>
+  <!-- ── TEXTO LATERAL DIREITO (vertical) ── -->
+  <text transform="translate(${sideXR},${sideY}) rotate(90)"
+        fill="white" fill-opacity="0.30"
+        font-size="${sideFont}" font-family="Arial,Helvetica,sans-serif"
+        font-weight="700" text-anchor="middle" letter-spacing="4">moveview.com.br</text>
+
+  <!-- ── BADGE NO PRINT ── -->
+  <rect x="${badgeX}" y="${badgeY}" width="${badgeW}" height="${badgeH}"
+        fill="black" fill-opacity="0.82" rx="3"/>
+  <rect x="${badgeX}" y="${badgeY}" width="${badgeW}" height="${badgeH}"
+        fill="none" stroke="white" stroke-opacity="0.50" stroke-width="1" rx="3"/>
+  <!-- linha divisória -->
+  <line x1="${badgeX}" y1="${badgeY + Math.round(badgeH * 0.52)}"
+        x2="${badgeX + badgeW}" y2="${badgeY + Math.round(badgeH * 0.52)}"
+        stroke="white" stroke-opacity="0.40" stroke-width="0.8"/>
+  <text x="${badgeX + badgeW / 2}" y="${badgeY + Math.round(badgeH * 0.38)}"
+        fill="white" fill-opacity="0.95"
+        font-size="${Math.round(badgeSize * 0.55)}" font-family="Arial,Helvetica,sans-serif"
+        font-weight="900" text-anchor="middle" letter-spacing="2">NO</text>
+  <text x="${badgeX + badgeW / 2}" y="${badgeY + Math.round(badgeH * 0.80)}"
+        fill="white" fill-opacity="0.95"
+        font-size="${Math.round(badgeSize * 0.32)}" font-family="Arial,Helvetica,sans-serif"
+        font-weight="700" text-anchor="middle" letter-spacing="3">PRINT</text>
+
+  <!-- ── TEXTO LEGAL ao lado do badge ── -->
+  <text x="${legalX}" y="${badgeY + legalLH * 1}"
+        fill="white" fill-opacity="0.80"
+        font-size="${legalFont}" font-family="Arial,Helvetica,sans-serif"
+        font-weight="700">PROTEGIDA PELA LEI</text>
+  <text x="${legalX}" y="${badgeY + legalLH * 2}"
+        fill="white" fill-opacity="0.80"
+        font-size="${legalFont}" font-family="Arial,Helvetica,sans-serif"
+        font-weight="700">DE DIREITOS AUTORAIS:</text>
+  <text x="${legalX}" y="${badgeY + legalLH * 3}"
+        fill="white" fill-opacity="0.80"
+        font-size="${legalFont}" font-family="Arial,Helvetica,sans-serif"
+        font-weight="700">PROIBIDA A REPRODUÇÃO</text>
+  <text x="${legalX}" y="${badgeY + legalLH * 4}"
+        fill="#4ade80" fill-opacity="0.90"
+        font-size="${legalFont}" font-family="Arial,Helvetica,sans-serif"
+        font-weight="700">MOVEVIEW.COM.BR</text>
+
+  <!-- ── URL RODAPÉ ── -->
+  <text x="${cx}" y="${height - margin - Math.round(urlFont * 0.3)}"
+        fill="white" fill-opacity="0.65"
+        font-size="${urlFont}" font-family="Arial,Helvetica,sans-serif"
+        font-weight="600" text-anchor="middle" letter-spacing="3">moveview.com.br</text>
+
 </svg>`);
 }
 
@@ -196,7 +204,7 @@ async function _generateWatermarkedVersion(inputBuffer: Buffer): Promise<Buffer>
 		raw: { width: info.width, height: info.height, channels: 4 }
 	})
 		.removeAlpha()
-		.composite([{ input: wmSvg, gravity: 'center', blend: 'soft-light' }])
+		.composite([{ input: wmSvg, gravity: 'center', blend: 'over' }])
 		.jpeg({ quality: 60, progressive: true })
 		.toBuffer();
 }
