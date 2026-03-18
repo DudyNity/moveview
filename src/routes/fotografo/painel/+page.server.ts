@@ -97,7 +97,7 @@ export const actions: Actions = {
 
 		// Verify ownership
 		const [event] = await db
-			.select({ id: schema.events.id })
+			.select({ id: schema.events.id, coverUrl: schema.events.coverUrl })
 			.from(schema.events)
 			.where(and(eq(schema.events.id, eventId), eq(schema.events.photographerId, user.id)))
 			.limit(1);
@@ -135,6 +135,15 @@ export const actions: Actions = {
 			await Promise.allSettled(
 				photos.flatMap((p) => [deleteFile(p.originalKey), deleteFile(p.watermarkKey)])
 			);
+		}
+
+		// Delete cover image from R2
+		if (event.coverUrl) {
+			try {
+				const url = new URL(event.coverUrl);
+				const coverKey = url.pathname.replace(/^\//, '');
+				await deleteFile(coverKey);
+			} catch { /* ignora se URL inválida */ }
 		}
 
 		// Delete event (photos cascade via DB via onDelete: 'cascade')
