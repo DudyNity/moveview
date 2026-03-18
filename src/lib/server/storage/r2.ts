@@ -76,6 +76,13 @@ export function getPublicUrl(key: string): string {
 	return `${R2_PUBLIC_URL}/${key}`;
 }
 
+export async function getSignedUploadUrl(key: string, contentType: string, expiresIn = 300): Promise<string | null> {
+	const client = getClient();
+	if (!client) return null;
+	const command = new PutObjectCommand({ Bucket: BUCKET, Key: key, ContentType: contentType });
+	return getSignedUrl(client, command, { expiresIn });
+}
+
 export async function getSignedDownloadUrl(key: string, expiresIn = 600): Promise<string> {
 	const client = getClient();
 	if (!client) return getPublicUrl(key);

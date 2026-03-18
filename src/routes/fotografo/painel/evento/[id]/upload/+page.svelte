@@ -105,13 +105,40 @@
 		const timeout = setTimeout(() => controller.abort(), 3 * 60_000);
 
 		try {
-			// Comprime no browser antes de enviar (10MB → ~1MB)
-			const compressed = await compressImage(item.file);
+			// 1. Pede presigned URL para enviar original direto ao R2
+			let originalKey: string | null = null;
+			const presignRes = await fetch('/api/upload/presign', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					eventId: data.event.id,
+					filename: item.file.name,
+					contentType: item.file.type || 'image/jpeg'
+				}),
+				signal: controller.signal
+			});
 
+			if (presignRes.ok) {
+				const { uploadUrl, key } = await presignRes.json();
+				if (uploadUrl) {
+					// 2. Upload do original COMPLETO direto ao R2 (sem passar pelo servidor)
+					await fetch(uploadUrl, {
+						method: 'PUT',
+						body: item.file,
+						headers: { 'Content-Type': item.file.type || 'image/jpeg' },
+						signal: controller.signal
+					});
+					originalKey = key;
+				}
+			}
+
+			// 3. Envia versão comprimida ao servidor só para criar marca d'água
+			const compressed = await compressImage(item.file);
 			const formData = new FormData();
 			formData.append('file', compressed);
 			formData.append('eventId', data.event.id);
 			formData.append('price', String(data.event.photoPrice));
+			if (originalKey) formData.append('originalKey', originalKey);
 
 			const res = await fetch('/api/upload', {
 				method: 'POST',

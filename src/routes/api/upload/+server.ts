@@ -32,6 +32,7 @@ export const POST: RequestHandler = async ({ request, locals, getClientAddress }
 	const file = formData.get('file');
 	const eventId = formData.get('eventId')?.toString();
 	const priceStr = formData.get('price')?.toString() ?? String(DEFAULT_PHOTO_PRICE);
+	const preUploadedOriginalKey = formData.get('originalKey')?.toString() ?? null;
 
 	if (!file || !(file instanceof File)) throw error(400, 'Arquivo não enviado');
 	if (!eventId) throw error(400, 'ID do evento não informado');
@@ -70,14 +71,15 @@ export const POST: RequestHandler = async ({ request, locals, getClientAddress }
 
 	const timestamp = Date.now();
 	const safeFilename = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-	const originalKey = `originals/${eventId}/${timestamp}_${safeFilename}`;
+	// Se o original já foi enviado direto ao R2 pelo browser, usa a key existente
+	const originalKey = preUploadedOriginalKey ?? `originals/${eventId}/${timestamp}_${safeFilename}`;
 	const watermarkKey = `watermarks/${eventId}/${timestamp}_${safeFilename}`;
 
 	try {
-		await Promise.all([
-			uploadFile(originalKey, original, 'image/jpeg'),
-			uploadFile(watermarkKey, watermarked, 'image/jpeg')
-		]);
+		const uploads: Promise<unknown>[] = [uploadFile(watermarkKey, watermarked, 'image/jpeg')];
+		// Só faz upload do original se não foi enviado direto ao R2
+		if (!preUploadedOriginalKey) uploads.push(uploadFile(originalKey, original, 'image/jpeg'));
+		await Promise.all(uploads);
 	} catch (e) {
 		console.error('Error uploading to storage:', e);
 		throw error(500, 'Erro ao salvar arquivo no storage');
