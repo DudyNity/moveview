@@ -1,4 +1,6 @@
 import sharp from 'sharp';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { WATERMARK_MAX_WIDTH } from '$lib/constants.js';
 
 // Desativa cache do libvips para liberar memória entre processamentos
@@ -6,8 +8,14 @@ sharp.cache(false);
 // Permite até 4 threads do libvips em paralelo
 sharp.concurrency(4);
 
-const BRAND = 'MOVE VIEW PHOTOS';
-const SYMBOL = 'M\\'; // símbolo M\ — velocidade + inicial
+// Logo embeded as base64 (carregado uma vez no startup)
+let LOGO_B64 = '';
+try {
+	const logoPath = join(process.cwd(), 'static', 'logo', 'logo.png');
+	LOGO_B64 = readFileSync(logoPath).toString('base64');
+} catch {
+	// logo não encontrada — watermark continua sem ela
+}
 
 /** Fast deterministic hash → seed */
 function imageSeed(buf: Buffer): number {
@@ -72,12 +80,13 @@ function buildWatermarkSvg(width: number, height: number): Buffer {
 	const badgeSize  = Math.round(minDim * 0.08);
 	const legalFont  = Math.max(10, Math.round(minDim * 0.016));
 
-	// ── Badge NO PRINT ────────────────────────────────────────────────────────
-	const badgeX  = Math.round(width  * 0.08);
-	const badgeY  = Math.round(height * 0.72);
-	const badgeW  = Math.round(badgeSize * 1.5);
-	const badgeH  = Math.round(badgeSize * 1.8);
-	const legalX  = badgeX + badgeW + Math.round(minDim * 0.015);
+	// ── Logo + texto legal (canto inferior esquerdo) ─────────────────────────
+	const badgeX  = Math.round(width  * 0.05);
+	const badgeY  = Math.round(height * 0.74);
+	// Logo proporção 266:184 ≈ 1.446:1
+	const logoH   = Math.round(badgeSize * 1.2);
+	const logoW   = Math.round(logoH * 266 / 184);
+	const legalX  = badgeX + logoW + Math.round(minDim * 0.02);
 	const legalLH = Math.round(legalFont * 1.5);
 
 	// ── Texto lateral (vertical) ──────────────────────────────────────────────
@@ -128,25 +137,12 @@ function buildWatermarkSvg(width: number, height: number): Buffer {
         font-size="${sideFont}" font-family="Arial,Helvetica,sans-serif"
         font-weight="700" text-anchor="middle" letter-spacing="4">moveview.com.br</text>
 
-  <!-- ── BADGE NO PRINT ── -->
-  <rect x="${badgeX}" y="${badgeY}" width="${badgeW}" height="${badgeH}"
-        fill="black" fill-opacity="0.82" rx="3"/>
-  <rect x="${badgeX}" y="${badgeY}" width="${badgeW}" height="${badgeH}"
-        fill="none" stroke="white" stroke-opacity="0.50" stroke-width="1" rx="3"/>
-  <!-- linha divisória -->
-  <line x1="${badgeX}" y1="${badgeY + Math.round(badgeH * 0.52)}"
-        x2="${badgeX + badgeW}" y2="${badgeY + Math.round(badgeH * 0.52)}"
-        stroke="white" stroke-opacity="0.40" stroke-width="0.8"/>
-  <text x="${badgeX + badgeW / 2}" y="${badgeY + Math.round(badgeH * 0.38)}"
-        fill="white" fill-opacity="0.95"
-        font-size="${Math.round(badgeSize * 0.55)}" font-family="Arial,Helvetica,sans-serif"
-        font-weight="900" text-anchor="middle" letter-spacing="2">NO</text>
-  <text x="${badgeX + badgeW / 2}" y="${badgeY + Math.round(badgeH * 0.80)}"
-        fill="white" fill-opacity="0.95"
-        font-size="${Math.round(badgeSize * 0.32)}" font-family="Arial,Helvetica,sans-serif"
-        font-weight="700" text-anchor="middle" letter-spacing="3">PRINT</text>
+  <!-- ── LOGO ── -->
+  ${LOGO_B64 ? `<image href="data:image/png;base64,${LOGO_B64}"
+        x="${badgeX}" y="${badgeY}" width="${logoW}" height="${logoH}"
+        preserveAspectRatio="xMidYMid meet" opacity="0.90"/>` : ''}
 
-  <!-- ── TEXTO LEGAL ao lado do badge ── -->
+  <!-- ── TEXTO LEGAL ao lado da logo ── -->
   <text x="${legalX}" y="${badgeY + legalLH * 1}"
         fill="white" fill-opacity="0.80"
         font-size="${legalFont}" font-family="Arial,Helvetica,sans-serif"
