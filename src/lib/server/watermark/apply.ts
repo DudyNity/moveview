@@ -85,7 +85,8 @@ function buildWatermarkSvg(width: number, height: number): Buffer {
 	const sideXL = Math.round(width  * 0.025);
 	const sideXR = Math.round(width  * 0.975);
 
-	return Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
+	return Buffer.from(`<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
 
   <!-- ── CANTOS: marcas de recorte ── -->
   <!-- topo esquerdo -->
@@ -157,7 +158,7 @@ function buildWatermarkSvg(width: number, height: number): Buffer {
   <text x="${legalX}" y="${badgeY + legalLH * 3}"
         fill="white" fill-opacity="0.80"
         font-size="${legalFont}" font-family="Arial,Helvetica,sans-serif"
-        font-weight="700">PROIBIDA A REPRODUÇÃO</text>
+        font-weight="700">PROIBIDA A REPRODUCAO</text>
   <text x="${legalX}" y="${badgeY + legalLH * 4}"
         fill="#4ade80" fill-opacity="0.90"
         font-size="${legalFont}" font-family="Arial,Helvetica,sans-serif"
@@ -197,16 +198,26 @@ async function _generateWatermarkedVersion(inputBuffer: Buffer): Promise<Buffer>
 	applyPixelNoise(data, info.width, info.height, seed);
 
 	// ── Step 3: composite SVG watermark layers ────────────────────────────────
-	// Feed raw noised data directly into the composite pipeline (no intermediate toBuffer)
 	const wmSvg = buildWatermarkSvg(info.width, info.height);
 
-	return sharp(data, {
-		raw: { width: info.width, height: info.height, channels: 4 }
-	})
-		.removeAlpha()
-		.composite([{ input: wmSvg, gravity: 'center', blend: 'over' }])
-		.jpeg({ quality: 60, progressive: true })
-		.toBuffer();
+	try {
+		return await sharp(data, {
+			raw: { width: info.width, height: info.height, channels: 4 }
+		})
+			.removeAlpha()
+			.composite([{ input: wmSvg, gravity: 'center', blend: 'over' }])
+			.jpeg({ quality: 60, progressive: true })
+			.toBuffer();
+	} catch (e) {
+		console.error('[Watermark] SVG composite failed:', e);
+		// fallback: retorna sem marca d'água mas não quebra o upload
+		return sharp(data, {
+			raw: { width: info.width, height: info.height, channels: 4 }
+		})
+			.removeAlpha()
+			.jpeg({ quality: 60, progressive: true })
+			.toBuffer();
+	}
 }
 
 export function generateWatermarkedVersion(inputBuffer: Buffer): Promise<Buffer> {
