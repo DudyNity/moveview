@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import Icon from '@iconify/svelte';
 	import SportInput from '$lib/components/SportInput.svelte';
+	import DatePicker from '$lib/components/DatePicker.svelte';
 	import type { ActionData, PageData } from './$types.js';
 
 	interface Props {
@@ -141,16 +142,12 @@
 
 				<div class="field">
 					<label for="eventDate">Data do Evento <span class="required">*</span></label>
-					<div class="input-wrap">
-						<Icon icon="lucide:calendar" width="14" class="input-icon" />
-						<input
-							id="eventDate"
-							name="eventDate"
-							type="date"
-							required
-							value={form?.values?.eventDate ?? ''}
-						/>
-					</div>
+					<DatePicker
+						id="eventDate"
+						name="eventDate"
+						value={form?.values?.eventDate ?? ''}
+						required
+					/>
 				</div>
 
 				<div class="field">
