@@ -2,6 +2,8 @@ import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
 import { db, schema } from '$lib/server/db/index.js';
 import { eq, and } from 'drizzle-orm';
+import { isRateLimited } from '$lib/server/rate-limit.js';
+import { RATE_LIMIT_CREATE_SPORT_MAX, RATE_LIMIT_CREATE_SPORT_WINDOW_MS } from '$lib/constants.js';
 
 function requirePhotographer(locals: App.Locals) {
 	if (!locals.user) throw error(401, 'Não autenticado');
@@ -27,6 +29,10 @@ export const GET: RequestHandler = async ({ locals }) => {
 /** POST /api/photographer/sports — cria novo esporte */
 export const POST: RequestHandler = async ({ request, locals }) => {
 	const user = requirePhotographer(locals);
+
+	if (isRateLimited(`create_sport:${user.id}`, RATE_LIMIT_CREATE_SPORT_MAX, RATE_LIMIT_CREATE_SPORT_WINDOW_MS)) {
+		throw error(429, 'Muitos esportes criados em pouco tempo. Aguarde alguns minutos.');
+	}
 
 	const { name } = await request.json().catch(() => ({}));
 	const trimmed = name?.toString().trim();

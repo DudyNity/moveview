@@ -32,3 +32,11 @@ export const RATE_LIMIT_UPLOAD_WINDOW_MS = 10 * 60_000;
 /** Máximo de downloads por usuário em 1 minuto */
 export const RATE_LIMIT_DOWNLOAD_MAX = 60;
 export const RATE_LIMIT_DOWNLOAD_WINDOW_MS = 60_000;
+
+/** Máximo de eventos criados por fotógrafo em 10 minutos */
+export const RATE_LIMIT_CREATE_EVENT_MAX = 5;
+export const RATE_LIMIT_CREATE_EVENT_WINDOW_MS = 10 * 60_000;
+
+/** Máximo de esportes criados por fotógrafo em 10 minutos */
+export const RATE_LIMIT_CREATE_SPORT_MAX = 10;
+export const RATE_LIMIT_CREATE_SPORT_WINDOW_MS = 10 * 60_000;

@@ -5,7 +5,8 @@ import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import sharp from 'sharp';
 import { uploadFile, getPublicUrl } from '$lib/server/storage/r2.js';
-import { DEFAULT_PHOTO_PRICE } from '$lib/constants.js';
+import { DEFAULT_PHOTO_PRICE, RATE_LIMIT_CREATE_EVENT_MAX, RATE_LIMIT_CREATE_EVENT_WINDOW_MS } from '$lib/constants.js';
+import { isRateLimited } from '$lib/server/rate-limit.js';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const user = locals.user!;
@@ -44,6 +45,11 @@ function slugify(text: string): string {
 export const actions: Actions = {
 	default: async ({ request, locals }) => {
 		const user = locals.user!;
+
+		if (isRateLimited(`create_event:${user.id}`, RATE_LIMIT_CREATE_EVENT_MAX, RATE_LIMIT_CREATE_EVENT_WINDOW_MS)) {
+			return fail(429, { error: 'Muitos eventos criados em pouco tempo. Aguarde alguns minutos.' });
+		}
+
 		const formData = await request.formData();
 		const raw = Object.fromEntries(formData);
 
