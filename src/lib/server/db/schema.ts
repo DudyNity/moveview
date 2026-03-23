@@ -67,6 +67,8 @@ export const orders = pgTable('orders', {
 	totalAmount: integer('total_amount').notNull(), // in cents
 	stripeSessionId: text('stripe_session_id').unique(),
 	stripePaymentIntentId: text('stripe_payment_intent_id'),
+	mpPreferenceId: text('mp_preference_id').unique(),
+	mpPaymentId: text('mp_payment_id'),
 	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 });

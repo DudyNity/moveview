@@ -5,13 +5,11 @@ import { db, schema } from '$lib/server/db/index.js';
 import { inArray, eq } from 'drizzle-orm';
 import { env } from '$env/dynamic/private';
 import { env as pubEnv } from '$env/dynamic/public';
-const STRIPE_SECRET_KEY = env.STRIPE_SECRET_KEY;
-const PUBLIC_APP_URL = pubEnv.PUBLIC_APP_URL;
 import { isRateLimited } from '$lib/server/rate-limit.js';
-import {
-	RATE_LIMIT_CHECKOUT_MAX,
-	RATE_LIMIT_CHECKOUT_WINDOW_MS
-} from '$lib/constants.js';
+import { RATE_LIMIT_CHECKOUT_MAX, RATE_LIMIT_CHECKOUT_WINDOW_MS } from '$lib/constants.js';
+import { createPreference, isMPConfigured } from '$lib/server/payment/mercadopago.js';
+
+const PUBLIC_APP_URL = pubEnv.PUBLIC_APP_URL;
 
 const checkoutSchema = z.object({
 	cartItems: z.array(z.string()).min(1, 'Carrinho vazio')
@@ -22,7 +20,6 @@ export const POST: RequestHandler = async ({ request, locals, getClientAddress }
 		return json({ error: 'Não autenticado' }, { status: 401 });
 	}
 
-	// Rate limiting por IP
 	const ip = getClientAddress();
 	if (isRateLimited(`checkout:${ip}`, RATE_LIMIT_CHECKOUT_MAX, RATE_LIMIT_CHECKOUT_WINDOW_MS)) {
 		return json({ error: 'Muitas tentativas. Tente novamente em alguns instantes.' }, { status: 429 });
@@ -38,14 +35,16 @@ export const POST: RequestHandler = async ({ request, locals, getClientAddress }
 
 	const { cartItems } = parsed.data;
 
-	// Busca fotos no banco
+	// Busca fotos e eventos no banco
 	const photos = await db
 		.select({
 			id: schema.photos.id,
 			price: schema.photos.price,
-			eventId: schema.photos.eventId
+			eventId: schema.photos.eventId,
+			eventName: schema.events.name
 		})
 		.from(schema.photos)
+		.innerJoin(schema.events, eq(schema.events.id, schema.photos.eventId))
 		.where(inArray(schema.photos.id, cartItems));
 
 	if (photos.length === 0) {
@@ -54,7 +53,7 @@ export const POST: RequestHandler = async ({ request, locals, getClientAddress }
 
 	const totalAmount = photos.reduce((sum, p) => sum + p.price, 0);
 
-	// Cria pedido e itens em uma única transaction para garantir consistência
+	// Cria pedido e itens em transação
 	const order = await db.transaction(async (tx) => {
 		const [newOrder] = await tx
 			.insert(schema.orders)
@@ -78,10 +77,10 @@ export const POST: RequestHandler = async ({ request, locals, getClientAddress }
 
 	const appUrl = PUBLIC_APP_URL || 'http://localhost:5173';
 
-	// Modo mock quando Stripe não está configurado
-	if (!STRIPE_SECRET_KEY || STRIPE_SECRET_KEY.includes('placeholder')) {
+	// ── Modo mock (sem MP configurado) ────────────────────────────────────────
+	if (!isMPConfigured()) {
 		if (process.env.NODE_ENV !== 'production') {
-			console.log(`[Checkout] Mock mode — order ${order.id} created, total ${totalAmount}`);
+			console.log(`[Checkout] Mock mode — order ${order.id}`);
 		}
 		await db
 			.update(schema.orders)
@@ -90,38 +89,43 @@ export const POST: RequestHandler = async ({ request, locals, getClientAddress }
 		return json({ url: `${appUrl}/pedidos/sucesso?order=${order.id}` });
 	}
 
+	// ── Mercado Pago ──────────────────────────────────────────────────────────
 	try {
-		const Stripe = (await import('stripe')).default;
-		const stripe = new Stripe(STRIPE_SECRET_KEY);
+		// Agrupa fotos por evento para título mais descritivo
+		const eventMap = new Map<string, { name: string; count: number; totalCents: number }>();
+		for (const p of photos) {
+			const entry = eventMap.get(p.eventId) ?? { name: p.eventName, count: 0, totalCents: 0 };
+			entry.count++;
+			entry.totalCents += p.price;
+			eventMap.set(p.eventId, entry);
+		}
 
-		const lineItems = photos.map((p) => ({
-			price_data: {
-				currency: 'brl',
-				product_data: { name: `Foto esportiva (${p.id.slice(0, 8)})` },
-				unit_amount: p.price
-			},
+		const items = Array.from(eventMap.values()).map((e) => ({
+			id: order.id,
+			title: `Fotos — ${e.name}`,
+			unit_price: e.totalCents / 100, // MP usa reais, não centavos
 			quantity: 1
 		}));
 
-		const session = await stripe.checkout.sessions.create({
-			payment_method_types: ['card', 'boleto', 'pix'],
-			line_items: lineItems,
-			mode: 'payment',
-			success_url: `${appUrl}/pedidos/sucesso?order=${order.id}`,
-			cancel_url: `${appUrl}/?canceled=1`,
-			metadata: { orderId: order.id, userId: locals.user.id }
+		const result = await createPreference(order.id, items, locals.user.email, {
+			success: `${appUrl}/pedidos/sucesso?order=${order.id}`,
+			failure: `${appUrl}/?canceled=1`,
+			pending: `${appUrl}/pedidos/sucesso?order=${order.id}`
 		});
+
+		if (!result) {
+			throw new Error('MP retornou null');
+		}
 
 		await db
 			.update(schema.orders)
-			.set({ stripeSessionId: session.id })
+			.set({ mpPreferenceId: result.preferenceId })
 			.where(eq(schema.orders.id, order.id));
 
-		return json({ url: session.url });
+		return json({ url: result.initPoint });
 	} catch (err) {
-		console.error('[Checkout] Stripe error:', err);
+		console.error('[Checkout] Mercado Pago error:', err);
 
-		// Marca o pedido como falho para não deixar órfão em pending
 		await db
 			.update(schema.orders)
 			.set({ status: 'failed', updatedAt: new Date() })
