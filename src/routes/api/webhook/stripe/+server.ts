@@ -27,26 +27,33 @@ export const POST: RequestHandler = async ({ request }) => {
 		if (event.type === 'checkout.session.completed') {
 			const session = event.data.object;
 			const orderId = session.metadata?.orderId;
-			const userId = session.metadata?.userId;
 
 			if (orderId) {
-				await db
-					.update(schema.orders)
-					.set({
-						status: 'paid',
-						stripePaymentIntentId: session.payment_intent as string,
-						updatedAt: new Date()
-					})
-					.where(eq(schema.orders.id, orderId));
+				// Busca userId no banco — não confia em metadata (IDOR prevention)
+				const [order] = await db
+					.select({ id: schema.orders.id, userId: schema.orders.userId })
+					.from(schema.orders)
+					.where(eq(schema.orders.id, orderId))
+					.limit(1);
 
-				// Envia e-mail de confirmação — falha não deve reverter o pagamento
-				if (userId) {
+				if (!order) {
+					console.error(`[Webhook] orderId=${orderId} não encontrado no banco`);
+				} else {
+					await db
+						.update(schema.orders)
+						.set({
+							status: 'paid',
+							stripePaymentIntentId: session.payment_intent as string,
+							updatedAt: new Date()
+						})
+						.where(eq(schema.orders.id, orderId));
+
+					// Envia e-mail de confirmação — falha não deve reverter o pagamento
 					try {
-						await sendDownloadEmail(userId, orderId);
+						await sendDownloadEmail(order.userId, orderId);
 					} catch (emailErr) {
-						// Log detalhado para monitorar e reenviar manualmente se necessário
 						console.error(
-							`[Webhook] Falha ao enviar e-mail de confirmação — orderId=${orderId} userId=${userId}`,
+							`[Webhook] Falha ao enviar e-mail — orderId=${orderId} userId=${order.userId}`,
 							emailErr
 						);
 					}

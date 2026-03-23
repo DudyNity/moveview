@@ -43,9 +43,33 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	const response = await resolve(event);
 
-	if (event.url.hostname !== 'localhost') {
+	const isProd = event.url.hostname !== 'localhost';
+
+	if (isProd) {
 		response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
 	}
+
+	// Content Security Policy
+	response.headers.set(
+		'Content-Security-Policy',
+		[
+			"default-src 'self'",
+			"script-src 'self' 'unsafe-inline'",   // unsafe-inline necessário para SvelteKit SSR
+			"style-src 'self' 'unsafe-inline'",
+			"img-src 'self' data: blob: https:",   // fotos do R2 (Cloudflare)
+			"connect-src 'self' https:",            // presigned uploads para R2
+			"font-src 'self'",
+			"object-src 'none'",                    // bloqueia Flash / plugins
+			"base-uri 'self'",                      // previne injeção de <base>
+			"form-action 'self'",                   // previne hijack de formulários
+			"frame-ancestors 'none'"                // previne clickjacking (substitui X-Frame-Options)
+		].join('; ')
+	);
+
+	// Headers de segurança adicionais
+	response.headers.set('X-Content-Type-Options', 'nosniff');
+	response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+	response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
 	return response;
 };

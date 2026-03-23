@@ -12,9 +12,12 @@ import { sendPasswordResetEmail } from '$lib/server/email/index.js';
 export const load: PageServerLoad = async () => ({ sent: false });
 
 function generateResetToken(userId: string, hashedPassword: string): string {
+	if (!RESET_TOKEN_SECRET) {
+		throw new Error('[Security] RESET_TOKEN_SECRET não está configurado');
+	}
 	const expiry = Date.now() + 3_600_000; // 1 hour
 	const payload = `${userId}:${expiry}`;
-	const sig = createHmac('sha256', RESET_TOKEN_SECRET || 'dev_secret')
+	const sig = createHmac('sha256', RESET_TOKEN_SECRET)
 		.update(`${payload}:${hashedPassword}`)
 		.digest('hex');
 	return `${Buffer.from(payload).toString('base64url')}.${sig}`;

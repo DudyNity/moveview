@@ -22,7 +22,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 	if (!event) throw error(404, 'Evento não encontrado');
 
-	const safeFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+	const safeFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 100);
 	const key = `originals/${eventId}/${Date.now()}_${safeFilename}`;
 	const uploadUrl = await getSignedUploadUrl(key, contentType || 'image/jpeg');
 

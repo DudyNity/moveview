@@ -80,7 +80,9 @@ export const POST: RequestHandler = async ({ request, locals, getClientAddress }
 
 	// Modo mock quando Stripe não está configurado
 	if (!STRIPE_SECRET_KEY || STRIPE_SECRET_KEY.includes('placeholder')) {
-		console.log(`[Checkout] Mock mode — order ${order.id} created, total ${totalAmount}`);
+		if (process.env.NODE_ENV !== 'production') {
+			console.log(`[Checkout] Mock mode — order ${order.id} created, total ${totalAmount}`);
+		}
 		await db
 			.update(schema.orders)
 			.set({ status: 'paid', updatedAt: new Date() })

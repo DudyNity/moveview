@@ -5,13 +5,14 @@ import { eq } from 'drizzle-orm';
 import { getFileBuffer } from '$lib/server/storage/r2.js';
 import { isRateLimited } from '$lib/server/rate-limit.js';
 
-// Generous limit — just prevents bulk scraping
-const PHOTO_RATE_MAX = 300;
+const PHOTO_RATE_MAX = 40;          // 40 fotos/min por IP
 const PHOTO_RATE_WINDOW_MS = 60_000;
 
-export const GET: RequestHandler = async ({ params, getClientAddress }) => {
+export const GET: RequestHandler = async ({ params, getClientAddress, locals }) => {
 	const ip = getClientAddress();
-	if (isRateLimited(`photo:${ip}`, PHOTO_RATE_MAX, PHOTO_RATE_WINDOW_MS)) {
+	// Rate limit por usuário autenticado OU por IP
+	const rateLimitKey = locals.user ? `photo:user:${locals.user.id}` : `photo:ip:${ip}`;
+	if (isRateLimited(rateLimitKey, PHOTO_RATE_MAX, PHOTO_RATE_WINDOW_MS)) {
 		throw error(429, 'Muitas requisições. Aguarde um momento.');
 	}
 
