@@ -1,12 +1,3 @@
-/**
- * Seed script — cria usuários iniciais para desenvolvimento/produção
- *
- * Uso:
- *   bun scripts/seed.ts
- *
- * Requer DATABASE_URL configurado no .env
- */
-
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { eq } from 'drizzle-orm';
