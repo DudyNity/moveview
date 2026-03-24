@@ -7,7 +7,7 @@ import { getPayment } from '$lib/server/payment/mercadopago.js';
 import { sendDownloadEmail } from '$lib/server/email/index.js';
 import { createHmac } from 'crypto';
 
-const MP_WEBHOOK_SECRET = env.MP_WEBHOOK_SECRET;
+const MP_WEBHOOK_SECRET = env.MP_WEBHOOK_SECRET?.trim();
 
 /** Valida a assinatura do webhook do Mercado Pago */
 function validateSignature(request: Request, _rawBody: string): boolean {
