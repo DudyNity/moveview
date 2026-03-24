@@ -15,7 +15,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 				totalAmount: schema.orders.totalAmount,
 				createdAt: schema.orders.createdAt,
 				photoId: schema.photos.id,
-				watermarkKey: schema.photos.watermarkKey,
+				originalKey: schema.photos.originalKey,
 				eventName: schema.events.name,
 				eventSlug: schema.events.slug,
 				priceAtPurchase: schema.orderItems.priceAtPurchase
@@ -55,7 +55,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			}
 			ordersMap.get(row.orderId)!.items.push({
 				photoId: row.photoId,
-				watermarkUrl: getPublicUrl(row.watermarkKey),
+				photoUrl: getPublicUrl(row.originalKey),
 				eventName: row.eventName,
 				eventSlug: row.eventSlug,
 				priceAtPurchase: row.priceAtPurchase

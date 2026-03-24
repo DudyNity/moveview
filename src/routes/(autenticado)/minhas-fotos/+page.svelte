@@ -61,7 +61,7 @@
 						{#each order.items as item (item.photoId)}
 							<div class="photo-item">
 								<a href="/evento/{item.eventSlug}" class="photo-event-link">
-									<img src={item.watermarkUrl} alt="Foto do evento" class="photo-thumb" />
+									<img src={item.photoUrl} alt="Foto do evento" class="photo-thumb" />
 								</a>
 								<div class="photo-footer">
 									<span class="photo-event">{item.eventName}</span>
