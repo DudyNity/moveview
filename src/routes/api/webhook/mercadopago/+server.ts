@@ -40,6 +40,10 @@ function validateSignature(request: Request, _rawBody: string): boolean {
 		.update(manifest)
 		.digest('hex');
 
+	console.log('[MP Webhook] manifest:', manifest);
+	console.log('[MP Webhook] expected:', expectedHash);
+	console.log('[MP Webhook] received:', v1);
+
 	return expectedHash === v1;
 }
 
