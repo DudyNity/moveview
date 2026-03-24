@@ -31,8 +31,8 @@ function validateSignature(request: Request, _rawBody: string): boolean {
 
 	// Monta a string de validação conforme docs do MP
 	const manifest = [
-		xRequestId ? `id:${dataId};` : '',
-		`request-id:${xRequestId};`,
+		dataId ? `id:${dataId};` : '',
+		xRequestId ? `request-id:${xRequestId};` : '',
 		`ts:${ts};`
 	].join('');
 
