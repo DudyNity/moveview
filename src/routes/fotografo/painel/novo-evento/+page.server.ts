@@ -4,7 +4,7 @@ import { db, schema } from '$lib/server/db/index.js';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import sharp from 'sharp';
-import { uploadFile, getPublicUrl } from '$lib/server/storage/r2.js';
+import { uploadFile } from '$lib/server/storage/r2.js';
 import { DEFAULT_PHOTO_PRICE, RATE_LIMIT_CREATE_EVENT_MAX, RATE_LIMIT_CREATE_EVENT_WINDOW_MS } from '$lib/constants.js';
 import { isRateLimited } from '$lib/server/rate-limit.js';
 
@@ -89,7 +89,7 @@ export const actions: Actions = {
 					.toBuffer();
 				const key = `covers/${slug}.jpg`;
 				await uploadFile(key, processed, 'image/jpeg');
-				coverUrl = getPublicUrl(key);
+				coverUrl = key;
 			} catch (err) {
 				console.error('Error processing cover image:', err);
 				// Non-fatal — proceed without cover
