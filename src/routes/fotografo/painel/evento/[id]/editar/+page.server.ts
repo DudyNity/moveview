@@ -85,7 +85,7 @@ export const actions: Actions = {
 
 		if (!existing) return fail(404, { error: 'Evento não encontrado' });
 
-		const raw = Object.fromEntries(formData.entries().filter(([k]) => k !== 'cover'));
+		const raw = Object.fromEntries([...formData.entries()].filter(([k]) => k !== 'cover'));
 		const parsed = updateEventSchema.safeParse(raw);
 		if (!parsed.success) return fail(400, { error: parsed.error.errors[0]?.message ?? 'Dados inválidos' });
 
