@@ -23,7 +23,7 @@ export interface CreatePreferenceResult {
 export async function createPreference(
 	orderId: string,
 	items: MPItem[],
-	payerEmail: string,
+	_payerEmail: string,
 	backUrls: { success: string; failure: string; pending: string }
 ): Promise<CreatePreferenceResult | null> {
 	const client = getClient();
@@ -40,7 +40,6 @@ export async function createPreference(
 				quantity: i.quantity,
 				currency_id: 'BRL'
 			})),
-			payer: { email: payerEmail },
 			back_urls: backUrls,
 			auto_return: 'approved',
 			external_reference: orderId,
