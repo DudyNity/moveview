@@ -82,9 +82,9 @@ function buildWatermarkSvg(width: number, height: number): Buffer {
 
 	// ── Logo + texto legal (canto inferior esquerdo) ─────────────────────────
 	const badgeX  = Math.round(width  * 0.05);
-	const badgeY  = Math.round(height * 0.74);
+	const badgeY  = Math.round(height * 0.72);
 	// Logo proporção 266:184 ≈ 1.446:1
-	const logoH   = Math.round(badgeSize * 1.2);
+	const logoH   = Math.round(badgeSize * 1.8);
 	const logoW   = Math.round(logoH * 266 / 184);
 	const legalX  = badgeX + logoW + Math.round(minDim * 0.02);
 	const legalLH = Math.round(legalFont * 1.5);
@@ -94,8 +94,7 @@ function buildWatermarkSvg(width: number, height: number): Buffer {
 	const sideXL = Math.round(width  * 0.025);
 	const sideXR = Math.round(width  * 0.975);
 
-	return Buffer.from(`<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
+	return Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
 
   <!-- ── CANTOS: marcas de recorte ── -->
   <!-- topo esquerdo -->
@@ -140,7 +139,7 @@ function buildWatermarkSvg(width: number, height: number): Buffer {
   <!-- ── LOGO ── -->
   ${LOGO_B64 ? `<image href="data:image/png;base64,${LOGO_B64}"
         x="${badgeX}" y="${badgeY}" width="${logoW}" height="${logoH}"
-        preserveAspectRatio="xMidYMid meet" opacity="0.90"/>` : ''}
+        preserveAspectRatio="xMidYMid meet" opacity="1.0"/>` : ''}
 
   <!-- ── TEXTO LEGAL ao lado da logo ── -->
   <text x="${legalX}" y="${badgeY + legalLH * 1}"
