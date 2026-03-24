@@ -1,5 +1,6 @@
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
 import { env } from '$env/dynamic/private';
+import { env as pubEnv } from '$env/dynamic/public';
 
 function getClient(): MercadoPagoConfig | null {
 	const token = env.MP_ACCESS_TOKEN;
@@ -43,7 +44,7 @@ export async function createPreference(
 			back_urls: backUrls,
 			auto_return: 'approved',
 			external_reference: orderId,
-			notification_url: `${env.PUBLIC_APP_URL || ''}/api/webhook/mercadopago`,
+			notification_url: `${pubEnv.PUBLIC_APP_URL || ''}/api/webhook/mercadopago`,
 			statement_descriptor: 'MOVE VIEW PHOTOS',
 			payment_methods: {
 				excluded_payment_types: [],
