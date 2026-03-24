@@ -128,7 +128,7 @@
 
 				<p class="secure-note">
 					<Icon icon="lucide:shield-check" width="12" />
-					Pagamento seguro via Stripe
+					Pagamento seguro via Mercado Pago
 				</p>
 			</div>
 		{/if}
