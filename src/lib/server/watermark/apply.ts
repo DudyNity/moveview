@@ -121,19 +121,19 @@ function buildWatermarkSvg(width: number, height: number): Buffer {
   <!-- ── URL TOPO ── -->
   <text x="${cx}" y="${margin + Math.round(urlFont * 1.2)}"
         fill="white" fill-opacity="0.65"
-        font-size="${urlFont}" font-family="Arial,Helvetica,sans-serif"
+        font-size="${urlFont}" font-family="DejaVu Sans,Liberation Sans,FreeSans,sans-serif"
         font-weight="600" text-anchor="middle" letter-spacing="3">moveview.com.br</text>
 
   <!-- ── TEXTO LATERAL ESQUERDO (vertical) ── -->
   <text transform="translate(${sideXL},${sideY}) rotate(-90)"
         fill="white" fill-opacity="0.30"
-        font-size="${sideFont}" font-family="Arial,Helvetica,sans-serif"
+        font-size="${sideFont}" font-family="DejaVu Sans,Liberation Sans,FreeSans,sans-serif"
         font-weight="700" text-anchor="middle" letter-spacing="4">MOVE VIEW PHOTOS</text>
 
   <!-- ── TEXTO LATERAL DIREITO (vertical) ── -->
   <text transform="translate(${sideXR},${sideY}) rotate(90)"
         fill="white" fill-opacity="0.30"
-        font-size="${sideFont}" font-family="Arial,Helvetica,sans-serif"
+        font-size="${sideFont}" font-family="DejaVu Sans,Liberation Sans,FreeSans,sans-serif"
         font-weight="700" text-anchor="middle" letter-spacing="4">moveview.com.br</text>
 
   <!-- ── LOGO ── -->
@@ -144,25 +144,25 @@ function buildWatermarkSvg(width: number, height: number): Buffer {
   <!-- ── TEXTO LEGAL ao lado da logo ── -->
   <text x="${legalX}" y="${badgeY + legalLH * 1}"
         fill="white" fill-opacity="0.80"
-        font-size="${legalFont}" font-family="Arial,Helvetica,sans-serif"
+        font-size="${legalFont}" font-family="DejaVu Sans,Liberation Sans,FreeSans,sans-serif"
         font-weight="700">PROTEGIDA PELA LEI</text>
   <text x="${legalX}" y="${badgeY + legalLH * 2}"
         fill="white" fill-opacity="0.80"
-        font-size="${legalFont}" font-family="Arial,Helvetica,sans-serif"
+        font-size="${legalFont}" font-family="DejaVu Sans,Liberation Sans,FreeSans,sans-serif"
         font-weight="700">DE DIREITOS AUTORAIS:</text>
   <text x="${legalX}" y="${badgeY + legalLH * 3}"
         fill="white" fill-opacity="0.80"
-        font-size="${legalFont}" font-family="Arial,Helvetica,sans-serif"
+        font-size="${legalFont}" font-family="DejaVu Sans,Liberation Sans,FreeSans,sans-serif"
         font-weight="700">PROIBIDA A REPRODUCAO</text>
   <text x="${legalX}" y="${badgeY + legalLH * 4}"
         fill="#4ade80" fill-opacity="0.90"
-        font-size="${legalFont}" font-family="Arial,Helvetica,sans-serif"
+        font-size="${legalFont}" font-family="DejaVu Sans,Liberation Sans,FreeSans,sans-serif"
         font-weight="700">MOVEVIEW.COM.BR</text>
 
   <!-- ── URL RODAPÉ ── -->
   <text x="${cx}" y="${height - margin - Math.round(urlFont * 0.3)}"
         fill="white" fill-opacity="0.65"
-        font-size="${urlFont}" font-family="Arial,Helvetica,sans-serif"
+        font-size="${urlFont}" font-family="DejaVu Sans,Liberation Sans,FreeSans,sans-serif"
         font-weight="600" text-anchor="middle" letter-spacing="3">moveview.com.br</text>
 
 </svg>`);
