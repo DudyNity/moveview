@@ -38,7 +38,10 @@
 			}
 
 			const { url } = await res.json();
-			if (url) window.location.href = url;
+			if (url) {
+				cart.clearCart();
+				window.location.href = url;
+			}
 		} catch {
 			error = 'Erro de conexão. Tente novamente.';
 		} finally {

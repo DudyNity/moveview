@@ -3,12 +3,12 @@ import { browser } from '$app/environment';
 import type { CartItem } from '$lib/types.js';
 
 function createCartStore() {
-	const STORAGE_KEY = 'promoment_cart';
+	let storageKey = 'cart_guest';
 
 	function load(): CartItem[] {
 		if (!browser) return [];
 		try {
-			const raw = localStorage.getItem(STORAGE_KEY);
+			const raw = localStorage.getItem(storageKey);
 			return raw ? JSON.parse(raw) : [];
 		} catch {
 			return [];
@@ -18,7 +18,7 @@ function createCartStore() {
 	function save(items: CartItem[]) {
 		if (!browser) return;
 		try {
-			localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+			localStorage.setItem(storageKey, JSON.stringify(items));
 		} catch {
 			// ignore
 		}
@@ -28,6 +28,10 @@ function createCartStore() {
 
 	return {
 		subscribe,
+		initForUser(userId: string) {
+			storageKey = `cart_${userId}`;
+			set(load());
+		},
 		addToCart(item: CartItem) {
 			update((items) => {
 				if (items.some((i) => i.photoId === item.photoId)) return items;
