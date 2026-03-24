@@ -24,9 +24,15 @@ function validateSignature(request: Request, _rawBody: string): boolean {
 	if (!xSignature) return false;
 
 	// Extrai ts e v1 do header x-signature
-	const parts = Object.fromEntries(xSignature.split(',').map((p) => p.split('=')));
+	const parts = Object.fromEntries(
+		xSignature.split(',').map((p) => {
+			const idx = p.indexOf('=');
+			return [p.slice(0, idx).trim(), p.slice(idx + 1).trim()];
+		})
+	);
 	const ts = parts['ts'];
 	const v1 = parts['v1'];
+	console.log('[MP Webhook] secret length:', MP_WEBHOOK_SECRET?.length);
 	if (!ts || !v1) return false;
 
 	// Monta a string de validação conforme docs do MP
