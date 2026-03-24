@@ -32,7 +32,6 @@ function validateSignature(request: Request, _rawBody: string): boolean {
 	);
 	const ts = parts['ts'];
 	const v1 = parts['v1'];
-	console.log('[MP Webhook] secret length:', MP_WEBHOOK_SECRET?.length);
 	if (!ts || !v1) return false;
 
 	// Monta a string de validação conforme docs do MP
@@ -45,10 +44,6 @@ function validateSignature(request: Request, _rawBody: string): boolean {
 	const expectedHash = createHmac('sha256', MP_WEBHOOK_SECRET)
 		.update(manifest)
 		.digest('hex');
-
-	console.log('[MP Webhook] manifest:', manifest);
-	console.log('[MP Webhook] expected:', expectedHash);
-	console.log('[MP Webhook] received:', v1);
 
 	return expectedHash === v1;
 }
