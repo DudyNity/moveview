@@ -302,7 +302,7 @@
 /* ─── Hero ───────────────────────────────────────── */
 .hero {
 	position: relative;
-	min-height: calc(88vh - var(--nav-height));
+	min-height: calc(100vh - var(--nav-height));
 	display: flex;
 	flex-direction: column;
 	align-items: center;
