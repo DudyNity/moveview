@@ -77,7 +77,7 @@
 
 			<h1 class="hero-title fade-up" style="animation-delay:0.06s">
 				Seus<br>
-				<em class="title-accent">melhores</em><br>
+				<em class="title-accent">melhores</em>
 				momentos.
 			</h1>
 
