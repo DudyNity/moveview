@@ -106,7 +106,7 @@
 		<section>
 			<h2>10. Contato</h2>
 			<p>
-				Dúvidas sobre estes termos: <strong>contato@promomentos.com.br</strong>
+				Dúvidas sobre estes termos: <strong>contato@moveview.com.br</strong>
 			</p>
 		</section>
 	</div>

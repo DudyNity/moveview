@@ -79,7 +79,7 @@
 			<h2>7. Contato</h2>
 			<p>
 				Para dúvidas sobre esta política ou para exercer seus direitos, entre em contato:
-				<strong>privacidade@promomentos.com.br</strong>
+				<strong>privacidade@moveview.com.br</strong>
 			</p>
 		</section>
 	</div>
