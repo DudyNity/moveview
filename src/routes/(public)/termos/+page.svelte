@@ -19,8 +19,7 @@
 		<section>
 			<h2>2. Descrição do serviço</h2>
 			<p>
-				A Move View Photos é uma plataforma de fotografia esportiva que conecta fotógrafos profissionais a
-				atletas. O serviço permite que atletas encontrem, visualizem (com marca d'água) e adquiram
+				A Move View Photos é um serviço de fotografia esportiva profissional. O serviço permite que atletas encontrem, visualizem (com marca d'água) e adquiram
 				fotos de eventos esportivos em alta resolução.
 			</p>
 		</section>
@@ -28,7 +27,7 @@
 		<section>
 			<h2>3. Direitos autorais das fotos</h2>
 			<p>
-				Todas as fotos publicadas na plataforma são de propriedade dos fotógrafos que as enviaram. A
+				Todas as fotos publicadas são de propriedade do fotógrafo responsável pelo serviço. A
 				compra de uma foto concede ao comprador uma <strong>licença pessoal e intransferível</strong>
 				para uso privado, incluindo:
 			</p>
@@ -46,7 +45,7 @@
 		<section>
 			<h2>4. Pagamentos e reembolsos</h2>
 			<p>
-				Os pagamentos são processados pelo Stripe de forma segura. Após a confirmação do pagamento,
+				Os pagamentos são processados pelo Mercado Pago de forma segura. Após a confirmação do pagamento,
 				os downloads são liberados imediatamente. <strong>As compras são definitivas</strong> —
 				não realizamos reembolsos exceto em casos de erro técnico comprovado (foto não disponível
 				para download, arquivo corrompido).
@@ -77,11 +76,10 @@
 		</section>
 
 		<section>
-			<h2>7. Para fotógrafos</h2>
+			<h2>7. Responsabilidade sobre o conteúdo</h2>
 			<p>
-				Ao fazer upload de fotos na Move View Photos, você garante que possui todos os direitos sobre as
-				imagens e autorização dos fotografados (especialmente em caso de menores de idade). A
-				Move View Photos retém uma comissão sobre cada venda conforme acordado no momento do cadastro.
+				O fotógrafo responsável pelo serviço garante que possui todos os direitos sobre as
+				imagens publicadas e autorização dos fotografados (especialmente em caso de menores de idade).
 			</p>
 		</section>
 
