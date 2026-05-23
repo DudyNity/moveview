@@ -52,7 +52,9 @@ export const actions: Actions = {
 		}
 
 		const formData = await request.formData();
-		const raw = Object.fromEntries(formData);
+		const raw = Object.fromEntries(
+			[...formData.entries()].filter(([, v]) => typeof v === 'string')
+		);
 
 		const result = createEventSchema.safeParse(raw);
 		if (!result.success) {

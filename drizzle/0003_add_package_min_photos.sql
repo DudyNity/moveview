@@ -1,1 +1,1 @@
-ALTER TABLE "events" ADD COLUMN "package_min_photos" integer;
+ALTER TABLE "events" ADD COLUMN IF NOT EXISTS "package_min_photos" integer;
