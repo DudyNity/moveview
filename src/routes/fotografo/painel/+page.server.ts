@@ -3,6 +3,7 @@ import type { PageServerLoad, Actions } from './$types.js';
 import { db, schema } from '$lib/server/db/index.js';
 import { eq, count, sum, desc, and, inArray } from 'drizzle-orm';
 import { deleteFile } from '$lib/server/storage/r2.js';
+import { sendDownloadEmail } from '$lib/server/email/index.js';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const user = locals.user!;
@@ -70,6 +71,37 @@ export const load: PageServerLoad = async ({ locals }) => {
 			photoCount: photoCountMap[e.id] ?? 0
 		}));
 
+		// Pedidos pendentes dos eventos deste fotógrafo
+		let pendingOrders: Array<{
+			id: string;
+			totalAmount: number;
+			createdAt: Date;
+			userName: string;
+			userEmail: string;
+		}> = [];
+
+		if (eventsIds.length > 0) {
+			pendingOrders = await db
+				.selectDistinctOn([schema.orders.id], {
+					id: schema.orders.id,
+					totalAmount: schema.orders.totalAmount,
+					createdAt: schema.orders.createdAt,
+					userName: schema.users.name,
+					userEmail: schema.users.email
+				})
+				.from(schema.orders)
+				.innerJoin(schema.users, eq(schema.orders.userId, schema.users.id))
+				.innerJoin(schema.orderItems, eq(schema.orderItems.orderId, schema.orders.id))
+				.innerJoin(schema.photos, eq(schema.photos.id, schema.orderItems.photoId))
+				.where(
+					and(
+						eq(schema.orders.status, 'pending'),
+						inArray(schema.photos.eventId, eventsIds)
+					)
+				)
+				.orderBy(schema.orders.id, desc(schema.orders.createdAt));
+		}
+
 		return {
 			events: eventsWithCounts,
 			stats: {
@@ -77,12 +109,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 				activeEvents: events.filter((e) => e.status === 'active').length,
 				totalRevenueCents,
 				totalSales
-			}
+			},
+			pendingOrders
 		};
 	} catch {
 		return {
 			events: [],
-			stats: { totalEvents: 0, activeEvents: 0, totalRevenueCents: 0, totalSales: 0 }
+			stats: { totalEvents: 0, activeEvents: 0, totalRevenueCents: 0, totalSales: 0 },
+			pendingOrders: []
 		};
 	}
 };
@@ -171,6 +205,39 @@ export const actions: Actions = {
 		if (!event) return fail(404, { error: 'Evento não encontrado' });
 
 		await db.update(schema.events).set({ status }).where(eq(schema.events.id, eventId));
+
+		return { success: true };
+	},
+
+	approveOrder: async ({ request, locals }) => {
+		const user = locals.user!;
+		const formData = await request.formData();
+		const orderId = formData.get('orderId')?.toString();
+		if (!orderId) return fail(400, { error: 'ID do pedido não informado' });
+
+		// Verifica que o pedido pertence a um evento deste fotógrafo
+		const [orderCheck] = await db
+			.select({ id: schema.orders.id, status: schema.orders.status, userId: schema.orders.userId })
+			.from(schema.orders)
+			.innerJoin(schema.orderItems, eq(schema.orderItems.orderId, schema.orders.id))
+			.innerJoin(schema.photos, eq(schema.photos.id, schema.orderItems.photoId))
+			.innerJoin(schema.events, eq(schema.events.id, schema.photos.eventId))
+			.where(and(eq(schema.orders.id, orderId), eq(schema.events.photographerId, user.id)))
+			.limit(1);
+
+		if (!orderCheck) return fail(404, { error: 'Pedido não encontrado' });
+		if (orderCheck.status === 'paid') return fail(400, { error: 'Pedido já aprovado' });
+
+		await db
+			.update(schema.orders)
+			.set({ status: 'paid', updatedAt: new Date() })
+			.where(eq(schema.orders.id, orderId));
+
+		try {
+			await sendDownloadEmail(orderCheck.userId, orderId);
+		} catch {
+			// não bloqueia se e-mail falhar
+		}
 
 		return { success: true };
 	}
