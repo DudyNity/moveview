@@ -8,6 +8,7 @@
 	import type { ActionData } from './$types.js';
 	let { data, form }: Props = $props();
 	let deleteError = $state('');
+	let confirmDeleteOrderId = $state<string | null>(null);
 
 	function formatPrice(cents: number) {
 		return (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -109,12 +110,9 @@
 								<Icon icon="lucide:check" width="13" /> Aprovar
 							</button>
 						</form>
-						<form method="POST" action="?/deleteOrder" use:enhance>
-							<input type="hidden" name="orderId" value={order.id} />
-							<button type="submit" class="btn-delete-order">
-								<Icon icon="lucide:trash-2" width="13" />
-							</button>
-						</form>
+						<button type="button" class="btn-delete-order" onclick={() => confirmDeleteOrderId = order.id}>
+							<Icon icon="lucide:trash-2" width="13" />
+						</button>
 					</div>
 					</div>
 				{/each}
@@ -286,6 +284,33 @@
 		</aside>
 	</div>
 </div>
+
+<!-- Modal confirmação de exclusão de pedido -->
+{#if confirmDeleteOrderId}
+	<div class="modal-backdrop" onclick={() => confirmDeleteOrderId = null}>
+		<div class="modal" onclick={(e) => e.stopPropagation()}>
+			<div class="modal-icon">
+				<Icon icon="lucide:trash-2" width="24" />
+			</div>
+			<h3>Excluir pedido?</h3>
+			<p>O pedido <strong>#{confirmDeleteOrderId.slice(0, 8).toUpperCase()}</strong> será excluído permanentemente. Esta ação não pode ser desfeita.</p>
+			<div class="modal-actions">
+				<button class="modal-btn-cancel" onclick={() => confirmDeleteOrderId = null}>Cancelar</button>
+				<form method="POST" action="?/deleteOrder" use:enhance={() => {
+					return async ({ update }) => {
+						confirmDeleteOrderId = null;
+						await update();
+					};
+				}}>
+					<input type="hidden" name="orderId" value={confirmDeleteOrderId} />
+					<button type="submit" class="modal-btn-confirm">
+						<Icon icon="lucide:trash-2" width="14" /> Excluir
+					</button>
+				</form>
+			</div>
+		</div>
+	</div>
+{/if}
 
 <style>
 	.dashboard { width: 100%; }
@@ -750,4 +775,75 @@
 		background: rgba(239,68,68,0.15);
 		border-color: #f87171;
 	}
+
+	.modal-backdrop {
+		position: fixed;
+		inset: 0;
+		background: rgba(0,0,0,0.7);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 100;
+		padding: 24px;
+	}
+
+	.modal {
+		background: var(--bg-card);
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-lg);
+		padding: 32px 28px;
+		max-width: 380px;
+		width: 100%;
+		text-align: center;
+	}
+
+	.modal-icon {
+		width: 52px;
+		height: 52px;
+		border-radius: 50%;
+		background: rgba(239,68,68,0.12);
+		border: 1px solid rgba(239,68,68,0.3);
+		color: #f87171;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		margin: 0 auto 16px;
+	}
+
+	.modal h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 10px; }
+	.modal p { font-size: 0.875rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 24px; }
+	.modal p strong { color: var(--text-secondary); }
+
+	.modal-actions { display: flex; gap: 10px; justify-content: center; }
+
+	.modal-btn-cancel {
+		padding: 9px 20px;
+		border-radius: var(--radius-sm);
+		border: 1px solid var(--border-color);
+		background: none;
+		color: var(--text-secondary);
+		font-size: 0.875rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.2s;
+	}
+
+	.modal-btn-cancel:hover { background: var(--bg-elevated); }
+
+	.modal-btn-confirm {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 9px 20px;
+		border-radius: var(--radius-sm);
+		border: none;
+		background: #ef4444;
+		color: white;
+		font-size: 0.875rem;
+		font-weight: 700;
+		cursor: pointer;
+		transition: opacity 0.2s;
+	}
+
+	.modal-btn-confirm:hover { opacity: 0.85; }
 </style>
