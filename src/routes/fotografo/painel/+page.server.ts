@@ -72,36 +72,19 @@ export const load: PageServerLoad = async ({ locals }) => {
 			photoCount: photoCountMap[e.id] ?? 0
 		}));
 
-		// Pedidos pendentes dos eventos deste fotógrafo
-		let pendingOrders: Array<{
-			id: string;
-			totalAmount: number;
-			createdAt: Date;
-			userName: string;
-			userEmail: string;
-		}> = [];
-
-		if (eventsIds.length > 0) {
-			pendingOrders = await db
-				.selectDistinctOn([schema.orders.id], {
-					id: schema.orders.id,
-					totalAmount: schema.orders.totalAmount,
-					createdAt: schema.orders.createdAt,
-					userName: schema.users.name,
-					userEmail: schema.users.email
-				})
-				.from(schema.orders)
-				.innerJoin(schema.users, eq(schema.orders.userId, schema.users.id))
-				.innerJoin(schema.orderItems, eq(schema.orderItems.orderId, schema.orders.id))
-				.innerJoin(schema.photos, eq(schema.photos.id, schema.orderItems.photoId))
-				.where(
-					and(
-						eq(schema.orders.status, 'pending'),
-						inArray(schema.photos.eventId, eventsIds)
-					)
-				)
-				.orderBy(schema.orders.id, desc(schema.orders.createdAt));
-		}
+		// Todos os pedidos pendentes da plataforma
+		const pendingOrders = await db
+			.select({
+				id: schema.orders.id,
+				totalAmount: schema.orders.totalAmount,
+				createdAt: schema.orders.createdAt,
+				userName: schema.users.name,
+				userEmail: schema.users.email
+			})
+			.from(schema.orders)
+			.innerJoin(schema.users, eq(schema.orders.userId, schema.users.id))
+			.where(eq(schema.orders.status, 'pending'))
+			.orderBy(desc(schema.orders.createdAt));
 
 		return {
 			events: eventsWithCounts,
@@ -216,14 +199,10 @@ export const actions: Actions = {
 		const orderId = formData.get('orderId')?.toString();
 		if (!orderId) return fail(400, { error: 'ID do pedido não informado' });
 
-		// Verifica que o pedido pertence a um evento deste fotógrafo
 		const [orderCheck] = await db
 			.select({ id: schema.orders.id, status: schema.orders.status, userId: schema.orders.userId })
 			.from(schema.orders)
-			.innerJoin(schema.orderItems, eq(schema.orderItems.orderId, schema.orders.id))
-			.innerJoin(schema.photos, eq(schema.photos.id, schema.orderItems.photoId))
-			.innerJoin(schema.events, eq(schema.events.id, schema.photos.eventId))
-			.where(and(eq(schema.orders.id, orderId), eq(schema.events.photographerId, user.id)))
+			.where(eq(schema.orders.id, orderId))
 			.limit(1);
 
 		if (!orderCheck) return fail(404, { error: 'Pedido não encontrado' });
