@@ -102,12 +102,20 @@
 							<span class="pending-price">{formatPrice(order.totalAmount)}</span>
 							<span class="pending-date">{formatDate(order.createdAt)}</span>
 						</div>
+						<div class="pending-actions">
 						<form method="POST" action="?/approveOrder" use:enhance>
 							<input type="hidden" name="orderId" value={order.id} />
 							<button type="submit" class="btn-approve">
 								<Icon icon="lucide:check" width="13" /> Aprovar
 							</button>
 						</form>
+						<form method="POST" action="?/deleteOrder" use:enhance>
+							<input type="hidden" name="orderId" value={order.id} />
+							<button type="submit" class="btn-delete-order">
+								<Icon icon="lucide:trash-2" width="13" />
+							</button>
+						</form>
+					</div>
 					</div>
 				{/each}
 			</div>
@@ -722,4 +730,24 @@
 	}
 
 	.btn-approve:hover { opacity: 0.85; }
+
+	.pending-actions { display: flex; gap: 6px; align-items: center; }
+
+	.btn-delete-order {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background: none;
+		border: 1px solid rgba(239,68,68,0.4);
+		color: #f87171;
+		padding: 7px 10px;
+		border-radius: var(--radius-sm);
+		cursor: pointer;
+		transition: all 0.2s;
+	}
+
+	.btn-delete-order:hover {
+		background: rgba(239,68,68,0.15);
+		border-color: #f87171;
+	}
 </style>

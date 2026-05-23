@@ -220,5 +220,25 @@ export const actions: Actions = {
 		}
 
 		return { success: true };
+	},
+
+	deleteOrder: async ({ request }) => {
+		const formData = await request.formData();
+		const orderId = formData.get('orderId')?.toString();
+		if (!orderId) return fail(400, { error: 'ID do pedido não informado' });
+
+		const [order] = await db
+			.select({ id: schema.orders.id, status: schema.orders.status })
+			.from(schema.orders)
+			.where(eq(schema.orders.id, orderId))
+			.limit(1);
+
+		if (!order) return fail(404, { error: 'Pedido não encontrado' });
+		if (order.status === 'paid') return fail(400, { error: 'Não é possível excluir um pedido já pago' });
+
+		await db.delete(schema.orderItems).where(eq(schema.orderItems.orderId, orderId));
+		await db.delete(schema.orders).where(eq(schema.orders.id, orderId));
+
+		return { success: true };
 	}
 };
