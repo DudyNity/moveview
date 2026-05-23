@@ -1,6 +1,8 @@
-import type { PageServerLoad } from './$types.js';
+import { fail } from '@sveltejs/kit';
+import type { PageServerLoad, Actions } from './$types.js';
 import { db, schema } from '$lib/server/db/index.js';
 import { eq, count, sum, desc } from 'drizzle-orm';
+import { sendDownloadEmail } from '$lib/server/email/index.js';
 
 export const load: PageServerLoad = async () => {
 	try {
@@ -33,6 +35,20 @@ export const load: PageServerLoad = async () => {
 			})
 			.from(schema.orders)
 			.where(eq(schema.orders.status, 'paid'));
+
+		// Pending orders (aguardando aprovação manual)
+		const pendingOrders = await db
+			.select({
+				id: schema.orders.id,
+				totalAmount: schema.orders.totalAmount,
+				createdAt: schema.orders.createdAt,
+				userName: schema.users.name,
+				userEmail: schema.users.email
+			})
+			.from(schema.orders)
+			.innerJoin(schema.users, eq(schema.orders.userId, schema.users.id))
+			.where(eq(schema.orders.status, 'pending'))
+			.orderBy(desc(schema.orders.createdAt));
 
 		// Recent orders
 		const recentOrders = await db
@@ -79,7 +95,8 @@ export const load: PageServerLoad = async () => {
 				totalRevenueCents: Number(orderStats?.revenue ?? 0)
 			},
 			recentOrders,
-			recentEvents
+			recentEvents,
+			pendingOrders
 		};
 	} catch {
 		return {
@@ -93,7 +110,38 @@ export const load: PageServerLoad = async () => {
 				totalRevenueCents: 0
 			},
 			recentOrders: [],
-			recentEvents: []
+			recentEvents: [],
+			pendingOrders: []
 		};
+	}
+};
+
+export const actions: Actions = {
+	approveOrder: async ({ request }) => {
+		const formData = await request.formData();
+		const orderId = formData.get('orderId')?.toString();
+		if (!orderId) return fail(400, { error: 'ID do pedido não informado' });
+
+		const [order] = await db
+			.select({ id: schema.orders.id, status: schema.orders.status, userId: schema.orders.userId })
+			.from(schema.orders)
+			.where(eq(schema.orders.id, orderId))
+			.limit(1);
+
+		if (!order) return fail(404, { error: 'Pedido não encontrado' });
+		if (order.status === 'paid') return fail(400, { error: 'Pedido já aprovado' });
+
+		await db
+			.update(schema.orders)
+			.set({ status: 'paid', updatedAt: new Date() })
+			.where(eq(schema.orders.id, orderId));
+
+		try {
+			await sendDownloadEmail(order.userId, orderId);
+		} catch {
+			// não bloqueia se e-mail falhar
+		}
+
+		return { success: true, orderId };
 	}
 };

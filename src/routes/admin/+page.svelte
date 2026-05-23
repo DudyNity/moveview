@@ -1,12 +1,10 @@
 <script lang="ts">
 	import Icon from '@iconify/svelte';
-	import type { PageData } from './$types.js';
+	import { enhance } from '$app/forms';
+	import type { PageData, ActionData } from './$types.js';
 
-	interface Props {
-		data: PageData;
-	}
-
-	let { data }: Props = $props();
+	interface Props { data: PageData; form: ActionData; }
+	let { data, form }: Props = $props();
 
 	function formatPrice(cents: number) {
 		return (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -123,6 +121,39 @@
 				<div class="stat-label">Receita total</div>
 			</div>
 		</div>
+
+		<!-- Pedidos pendentes -->
+		{#if data.pendingOrders.length > 0}
+			<div class="pending-section">
+				<div class="pending-header">
+					<Icon icon="lucide:clock" width="16" />
+					<h2>Pedidos Pendentes ({data.pendingOrders.length})</h2>
+					<span class="pending-hint">Aprovar libera o download para o comprador</span>
+				</div>
+				{#if form?.error}
+					<div class="alert-error"><Icon icon="lucide:alert-circle" width="14" /> {form.error}</div>
+				{/if}
+				<div class="pending-list">
+					{#each data.pendingOrders as order (order.id)}
+						<div class="pending-row">
+							<div class="pending-info">
+								<span class="mono">#{order.id.slice(0, 8).toUpperCase()}</span>
+								<strong>{order.userName}</strong>
+								<span class="muted">{order.userEmail}</span>
+								<span class="price">{formatPrice(order.totalAmount)}</span>
+								<span class="muted">{formatDate(order.createdAt)}</span>
+							</div>
+							<form method="POST" action="?/approveOrder" use:enhance>
+								<input type="hidden" name="orderId" value={order.id} />
+								<button type="submit" class="btn-approve">
+									<Icon icon="lucide:check" width="14" /> Aprovar
+								</button>
+							</form>
+						</div>
+					{/each}
+				</div>
+			</div>
+		{/if}
 
 		<!-- 2-col layout: table + side panel -->
 		<div class="content-layout">
@@ -598,4 +629,91 @@
 		.orders-grid, .events-grid { grid-template-columns: 1fr; }
 		.table-header { display: none; }
 	}
+
+	/* Pedidos pendentes */
+	.pending-section {
+		background: rgba(251, 191, 36, 0.06);
+		border: 1px solid rgba(251, 191, 36, 0.25);
+		border-radius: var(--radius-md);
+		padding: 20px 24px;
+		margin-bottom: 28px;
+	}
+
+	.pending-header {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		margin-bottom: 16px;
+		color: #fbbf24;
+	}
+
+	.pending-header h2 {
+		font-size: 1rem;
+		font-weight: 700;
+		margin: 0;
+		color: #fbbf24;
+	}
+
+	.pending-hint {
+		font-size: 0.8rem;
+		color: var(--text-muted);
+		margin-left: auto;
+	}
+
+	.alert-error {
+		background: rgba(239,68,68,0.1);
+		border: 1px solid rgba(239,68,68,0.3);
+		color: #f87171;
+		padding: 8px 12px;
+		border-radius: var(--radius-sm);
+		font-size: 0.85rem;
+		margin-bottom: 12px;
+		display: flex;
+		align-items: center;
+		gap: 6px;
+	}
+
+	.pending-list { display: flex; flex-direction: column; gap: 8px; }
+
+	.pending-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		background: var(--bg-elevated);
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-sm);
+		padding: 12px 16px;
+		gap: 12px;
+	}
+
+	.pending-info {
+		display: flex;
+		align-items: center;
+		gap: 14px;
+		flex-wrap: wrap;
+		font-size: 0.875rem;
+	}
+
+	.pending-info .mono { font-family: monospace; color: var(--text-muted); font-size: 0.8rem; }
+	.pending-info strong { color: var(--text-primary); }
+	.pending-info .muted { color: var(--text-muted); }
+	.pending-info .price { color: var(--accent); font-weight: 700; }
+
+	.btn-approve {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		background: var(--accent);
+		color: #050507;
+		border: none;
+		padding: 8px 16px;
+		border-radius: var(--radius-sm);
+		font-size: 0.85rem;
+		font-weight: 700;
+		cursor: pointer;
+		white-space: nowrap;
+		transition: opacity 0.2s;
+	}
+
+	.btn-approve:hover { opacity: 0.85; }
 </style>
