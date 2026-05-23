@@ -2,7 +2,7 @@ import { fail } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types.js';
 import { db, schema } from '$lib/server/db/index.js';
 import { eq, count, sum, desc, and, inArray } from 'drizzle-orm';
-import { deleteFile } from '$lib/server/storage/r2.js';
+import { deleteFile, getPublicUrl } from '$lib/server/storage/r2.js';
 import { sendDownloadEmail } from '$lib/server/email/index.js';
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -68,6 +68,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 		const eventsWithCounts = events.map((e) => ({
 			...e,
+			coverUrl: e.coverUrl ? getPublicUrl(e.coverUrl) : null,
 			photoCount: photoCountMap[e.id] ?? 0
 		}));
 

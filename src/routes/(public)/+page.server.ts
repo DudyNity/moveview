@@ -80,6 +80,7 @@ export const load: PageServerLoad = async ({ url }) => {
 
 		const eventsWithFuture = events.map((e) => ({
 			...e,
+			coverUrl: e.coverUrl ? getPublicUrl(e.coverUrl) : null,
 			isFuture: new Date(e.eventDate) >= todayStart,
 			previewPhotos: previewMap[e.id] ?? []
 		}));
