@@ -6,11 +6,22 @@ import { hashPassword } from '$lib/server/auth/password.js';
 import { sendPasswordResetEmail } from '$lib/server/email/index.js';
 import { env as pubEnv } from '$env/dynamic/public';
 const { PUBLIC_APP_URL, PUBLIC_APP_NAME } = pubEnv;
-import { randomBytes } from 'crypto';
+import { randomBytes, createHash } from 'crypto';
+import { isRateLimited } from '$lib/server/rate-limit.js';
+
+function hashToken(token: string): string {
+	return createHash('sha256').update(token).digest('hex');
+}
 
 // POST /api/auth/reset-password
 // Body: { action: 'request', email } | { action: 'confirm', token, password }
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, getClientAddress }) => {
+	const ip = getClientAddress();
+	// 5 tentativas por IP a cada 15 minutos — previne spam de e-mail e brute force
+	if (isRateLimited(`reset:${ip}`, 5, 15 * 60_000)) {
+		throw error(429, 'Muitas tentativas. Tente novamente mais tarde.');
+	}
+
 	const body = await request.json().catch(() => null);
 	if (!body) throw error(400, 'Dados inválidos');
 
@@ -35,9 +46,10 @@ export const POST: RequestHandler = async ({ request }) => {
 		const token = randomBytes(32).toString('hex');
 		const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
+		// Armazena apenas o hash — o token bruto vai no link do e-mail
 		await db.insert(schema.passwordResetTokens).values({
 			userId: user.id,
-			token,
+			token: hashToken(token),
 			expiresAt
 		});
 
@@ -66,7 +78,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			.from(schema.passwordResetTokens)
 			.where(
 				and(
-					eq(schema.passwordResetTokens.token, token),
+					eq(schema.passwordResetTokens.token, hashToken(token)),
 					gt(schema.passwordResetTokens.expiresAt, new Date())
 				)
 			)

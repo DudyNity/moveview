@@ -1,0 +1,8 @@
+User-agent: *
+Disallow: /api/
+Disallow: /fotografo/
+Disallow: /admin/
+Disallow: /(autenticado)/
+Allow: /
+
+Sitemap: https://moveview.com.br/sitemap.xml

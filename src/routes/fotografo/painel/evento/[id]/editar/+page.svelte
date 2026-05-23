@@ -180,7 +180,27 @@
 							<span class="input-prefix">R$</span>
 							<input id="packagePrice" name="packagePrice" type="number" step="0.01" min="0" placeholder="49.90" value={formatPrice(event.packagePrice)} />
 						</div>
-						<span class="field-hint"><Icon icon="lucide:info" width="11" /> Todas as fotos</span>
+						<span class="field-hint"><Icon icon="lucide:info" width="11" /> Preço para o comprador levar o pacote</span>
+					</div>
+
+					<div class="field">
+						<label for="packageMinPhotos">
+							Mínimo de fotos no pacote
+							<span class="label-optional">Opcional</span>
+						</label>
+						<div class="input-wrap">
+							<Icon icon="lucide:images" width="14" class="input-icon" />
+							<input
+								id="packageMinPhotos"
+								name="packageMinPhotos"
+								type="number"
+								inputmode="numeric"
+								min="1"
+								placeholder="ex: 10"
+								value={event.packageMinPhotos ?? ''}
+							/>
+						</div>
+						<span class="field-hint">Deixe em branco para incluir todas as fotos do evento</span>
 					</div>
 
 					<div class="field">

@@ -75,6 +75,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 				coverUrl: event.coverUrl ? getPublicUrl(event.coverUrl) : null,
 				status: event.status,
 				packagePrice: event.packagePrice,
+				packageMinPhotos: event.packageMinPhotos,
 				photoPrice: event.photoPrice,
 				isFuture: new Date(event.eventDate) >= todayStart
 			},

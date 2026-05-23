@@ -71,8 +71,12 @@
 		});
 	}
 
+	const IMAGE_EXTS = /\.(jpe?g|png|webp|tiff?|heic|avif)$/i;
+
 	function addFiles(files: File[]) {
-		const images = files.filter((f) => f.type.startsWith('image/'));
+		const images = files.filter(
+			(f) => f.type.startsWith('image/') || IMAGE_EXTS.test(f.name)
+		);
 		const newItems: UploadFile[] = images.map((f) => ({
 			id: Math.random().toString(36).slice(2),
 			file: f,
@@ -122,13 +126,18 @@
 				const { uploadUrl, key } = await presignRes.json();
 				if (uploadUrl) {
 					// 2. Upload do original COMPLETO direto ao R2 (sem passar pelo servidor)
-					await fetch(uploadUrl, {
-						method: 'PUT',
-						body: item.file,
-						headers: { 'Content-Type': item.file.type || 'image/jpeg' },
-						signal: controller.signal
-					});
-					originalKey = key;
+					// Falha silenciosa: se CORS não estiver configurado no R2, ignora e continua
+					try {
+						const putRes = await fetch(uploadUrl, {
+							method: 'PUT',
+							body: item.file,
+							headers: { 'Content-Type': item.file.type || 'image/jpeg' },
+							signal: controller.signal
+						});
+						if (putRes.ok) originalKey = key;
+					} catch {
+						// CORS ou erro de rede no R2 — prossegue sem guardar o original
+					}
 				}
 			}
 

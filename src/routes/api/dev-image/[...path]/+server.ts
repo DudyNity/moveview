@@ -3,6 +3,10 @@ import type { RequestHandler } from './$types';
 import { getFileBuffer } from '$lib/server/storage/r2.js';
 
 export const GET: RequestHandler = async ({ params }) => {
+	if (process.env.NODE_ENV === 'production') {
+		throw error(404, 'Not found');
+	}
+
 	const key = params.path;
 
 	// Path traversal protection

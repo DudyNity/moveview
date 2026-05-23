@@ -12,8 +12,8 @@ const MP_WEBHOOK_SECRET = env.MP_WEBHOOK_SECRET?.trim();
 /** Valida a assinatura do webhook do Mercado Pago */
 function validateSignature(request: Request, _rawBody: string): boolean {
 	if (!MP_WEBHOOK_SECRET) {
-		console.warn('[MP Webhook] MP_WEBHOOK_SECRET não configurado — pulando validação de assinatura');
-		return true; // permissivo até configurar o secret
+		console.error('[MP Webhook] MP_WEBHOOK_SECRET não configurado — requisição rejeitada');
+		return false; // fail closed: sem secret, rejeita tudo
 	}
 
 	const xSignature = request.headers.get('x-signature');

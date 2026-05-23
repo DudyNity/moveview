@@ -46,9 +46,12 @@ export const POST: RequestHandler = async ({ request, locals, getClientAddress }
 
 	if (!event) throw error(404, 'Evento não encontrado ou sem permissão');
 
-	// Valida tipo de arquivo
+	// Normaliza variantes de MIME type e valida
+	const normalizedType = file.type === 'image/jpg' || file.type === 'image/pjpeg' || file.type === ''
+		? 'image/jpeg'
+		: file.type;
 	const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/tiff'];
-	if (!allowedTypes.includes(file.type)) {
+	if (!allowedTypes.includes(normalizedType)) {
 		throw error(400, 'Tipo de arquivo inválido. Use JPEG, PNG, WEBP ou TIFF.');
 	}
 

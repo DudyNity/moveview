@@ -40,7 +40,7 @@ export const POST: RequestHandler = async ({ request, cookies, getClientAddress 
 		.limit(1);
 
 	if (existing.length > 0) {
-		return json({ error: 'Email já cadastrado' }, { status: 409 });
+		return json({ error: 'Não foi possível criar a conta com esses dados' }, { status: 409 });
 	}
 
 	const hashedPassword = await hashPassword(password);

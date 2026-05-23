@@ -29,6 +29,7 @@ const createEventSchema = z.object({
 		'Data do evento inválida'
 	),
 	packagePrice: z.string().optional(),
+	packageMinPhotos: z.string().optional(),
 	photoPrice: z.string().optional(),
 	status: z.enum(['draft', 'active'])
 });
@@ -61,7 +62,7 @@ export const actions: Actions = {
 			});
 		}
 
-		const { name, description, sport, location, city, eventDate, packagePrice, photoPrice, status } =
+		const { name, description, sport, location, city, eventDate, packagePrice, packageMinPhotos, photoPrice, status } =
 			result.data;
 
 		// Generate unique slug
@@ -71,6 +72,10 @@ export const actions: Actions = {
 
 		const packagePriceCents = packagePrice
 			? Math.round(parseFloat(packagePrice.replace(',', '.')) * 100)
+			: null;
+
+		const packageMinPhotosInt = packageMinPhotos
+			? Math.max(1, parseInt(packageMinPhotos, 10))
 			: null;
 
 		const photoPriceCents = photoPrice
@@ -109,6 +114,7 @@ export const actions: Actions = {
 					city,
 					eventDate: new Date(eventDate),
 					packagePrice: packagePriceCents,
+					packageMinPhotos: packageMinPhotosInt,
 					photoPrice: photoPriceCents,
 					coverUrl,
 					status,

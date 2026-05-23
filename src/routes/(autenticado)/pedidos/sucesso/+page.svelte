@@ -2,11 +2,24 @@
 	import { formatPrice } from '$lib/stores/cart.js';
 	import type { PageData } from './$types.js';
 	import Icon from '@iconify/svelte';
+	import { invalidateAll } from '$app/navigation';
 
 	interface Props { data: PageData; }
 	let { data }: Props = $props();
 
 	const isPaid = $derived(data.order.status === 'paid');
+
+	// Polling: aguarda webhook do MP confirmar o pagamento (até 60s)
+	$effect(() => {
+		if (isPaid) return;
+		let attempts = 0;
+		const interval = setInterval(async () => {
+			attempts++;
+			await invalidateAll();
+			if (isPaid || attempts >= 20) clearInterval(interval);
+		}, 3000);
+		return () => clearInterval(interval);
+	});
 </script>
 
 <svelte:head>

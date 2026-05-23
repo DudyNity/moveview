@@ -39,15 +39,18 @@
 	}
 
 	function addPackageToCart() {
-		allPhotos.forEach((photo) => {
-			if (!photo.isPurchased && !$cart.some((i) => i.photoId === photo.id)) {
-				cart.addToCart({
-					photoId: photo.id,
-					eventName: data.event.name,
-					watermarkUrl: photo.watermarkUrl,
-					price: photo.price
-				});
-			}
+		const minPhotos = data.event.packageMinPhotos;
+		const unpurchased = allPhotos.filter(
+			(photo) => !photo.isPurchased && !$cart.some((i) => i.photoId === photo.id)
+		);
+		const toAdd = minPhotos ? unpurchased.slice(0, minPhotos) : unpurchased;
+		toAdd.forEach((photo) => {
+			cart.addToCart({
+				photoId: photo.id,
+				eventName: data.event.name,
+				watermarkUrl: photo.watermarkUrl,
+				price: photo.price
+			});
 		});
 	}
 
@@ -67,7 +70,11 @@
 	// Pricing comparison — use event-level photoPrice
 	const photoPrice = $derived(data.event.photoPrice ?? 2900);
 	const packagePrice = $derived(data.event.packagePrice);
-	const totalIndividual = $derived(data.totalPhotos * photoPrice);
+	const packageMinPhotos = $derived(data.event.packageMinPhotos);
+	const packagePhotoCount = $derived(
+		packageMinPhotos ? Math.min(packageMinPhotos, data.totalPhotos) : data.totalPhotos
+	);
+	const totalIndividual = $derived(packagePhotoCount * photoPrice);
 	const savings = $derived(packagePrice ? Math.round((1 - packagePrice / totalIndividual) * 100) : 0);
 </script>
 
@@ -134,7 +141,7 @@
 						{#if data.event.packagePrice}
 							<div class="stat-divider"></div>
 							<div class="stat-pkg">
-								<span class="stat-pkg-label">pacote completo</span>
+								<span class="stat-pkg-label">{data.event.packageMinPhotos ? `pacote mín. ${data.event.packageMinPhotos} fotos` : 'pacote completo'}</span>
 								<span class="stat-pkg-price">{formatPrice(data.event.packagePrice)}</span>
 							</div>
 						{/if}
@@ -174,7 +181,8 @@
 
 			{#if packagePrice}
 				<button onclick={addPackageToCart} class="pkg-btn">
-					<Icon icon="lucide:package" width="16" /> Pacote completo — {formatPrice(packagePrice)}
+					<Icon icon="lucide:package" width="16" />
+					{packageMinPhotos ? `Pacote (mín. ${packageMinPhotos} fotos)` : 'Pacote completo'} — {formatPrice(packagePrice)}
 				</button>
 			{/if}
 		</div>
@@ -203,10 +211,10 @@
 				<div class="pricing-option package">
 					<div class="pricing-icon accent"><Icon icon="lucide:package" width="18" /></div>
 					<div class="pricing-info">
-						<span class="pricing-label">Pacote completo</span>
+						<span class="pricing-label">{packageMinPhotos ? `Pacote (mín. ${packageMinPhotos} fotos)` : 'Pacote completo'}</span>
 						<span class="pricing-value accent">{formatPrice(packagePrice)}<span class="pricing-unit"> tudo</span></span>
 						<span class="pricing-sub">
-							{data.totalPhotos} fotos em alta resolução
+							{packageMinPhotos ? `mín. ${packageMinPhotos}` : data.totalPhotos} fotos em alta resolução
 							{#if savings > 0}· <strong class="savings">economize {savings}%</strong>{/if}
 						</span>
 					</div>

@@ -238,7 +238,27 @@
 							oninput={onPriceInput}
 						/>
 					</div>
-					<span class="field-hint"><Icon icon="lucide:info" width="11" /> Todas as fotos do evento</span>
+					<span class="field-hint"><Icon icon="lucide:info" width="11" /> Preço para o comprador levar o pacote</span>
+				</div>
+
+				<div class="field">
+					<label for="packageMinPhotos">
+						Mínimo de fotos no pacote
+						<span class="label-optional">Opcional</span>
+					</label>
+					<div class="input-wrap">
+						<Icon icon="lucide:images" width="14" class="input-icon" />
+						<input
+							id="packageMinPhotos"
+							name="packageMinPhotos"
+							type="number"
+							inputmode="numeric"
+							min="1"
+							placeholder="ex: 10"
+							value={form?.values?.packageMinPhotos ?? ''}
+						/>
+					</div>
+					<span class="field-hint"><Icon icon="lucide:info" width="11" /> Deixe em branco para incluir todas as fotos do evento</span>
 				</div>
 
 				<div class="field">

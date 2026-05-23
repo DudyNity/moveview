@@ -39,6 +39,7 @@ export const events = pgTable('events', {
 	coverUrl: text('cover_url'),
 	status: eventStatusEnum('status').notNull().default('draft'),
 	packagePrice: integer('package_price'), // price in cents — full package
+	packageMinPhotos: integer('package_min_photos'), // minimum photos required to activate package
 	photoPrice: integer('photo_price').notNull().default(2900), // price per individual photo in cents
 	photographerId: text('photographer_id').references(() => users.id),
 	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()

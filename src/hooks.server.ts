@@ -55,10 +55,10 @@ export const handle: Handle = async ({ event, resolve }) => {
 		[
 			"default-src 'self'",
 			"script-src 'self' 'unsafe-inline'",   // unsafe-inline necessário para SvelteKit SSR
-			"style-src 'self' 'unsafe-inline'",
+			"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
 			"img-src 'self' data: blob: https:",   // fotos do R2 (Cloudflare)
 			"connect-src 'self' https:",            // presigned uploads para R2
-			"font-src 'self'",
+			"font-src 'self' https://fonts.gstatic.com",
 			"object-src 'none'",                    // bloqueia Flash / plugins
 			"base-uri 'self'",                      // previne injeção de <base>
 			"form-action 'self'",                   // previne hijack de formulários

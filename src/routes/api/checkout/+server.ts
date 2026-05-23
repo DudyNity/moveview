@@ -79,9 +79,11 @@ export const POST: RequestHandler = async ({ request, locals, getClientAddress }
 
 	// ── Modo mock (sem MP configurado) ────────────────────────────────────────
 	if (!isMPConfigured()) {
-		if (process.env.NODE_ENV !== 'production') {
-			console.log(`[Checkout] Mock mode — order ${order.id}`);
+		if (process.env.NODE_ENV === 'production') {
+			await db.update(schema.orders).set({ status: 'failed', updatedAt: new Date() }).where(eq(schema.orders.id, order.id));
+			return json({ error: 'Gateway de pagamento não configurado' }, { status: 503 });
 		}
+		console.log(`[Checkout] Mock mode — order ${order.id}`);
 		await db
 			.update(schema.orders)
 			.set({ status: 'paid', updatedAt: new Date() })

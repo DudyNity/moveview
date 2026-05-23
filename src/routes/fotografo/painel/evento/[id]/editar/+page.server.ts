@@ -46,6 +46,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			coverKey: event.coverUrl,
 			status: event.status,
 			packagePrice: event.packagePrice,
+			packageMinPhotos: event.packageMinPhotos,
 			photoPrice: event.photoPrice
 		},
 		photos: photos.map((p) => ({ ...p, watermarkUrl: getPublicUrl(p.watermarkKey) })),
@@ -68,6 +69,7 @@ const updateEventSchema = z.object({
 		'Data do evento inválida'
 	),
 	packagePrice: z.string().optional(),
+	packageMinPhotos: z.string().optional(),
 	photoPrice: z.string().optional(),
 	status: z.enum(['draft', 'active', 'archived'])
 });
@@ -89,9 +91,12 @@ export const actions: Actions = {
 		const parsed = updateEventSchema.safeParse(raw);
 		if (!parsed.success) return fail(400, { error: parsed.error.errors[0]?.message ?? 'Dados inválidos' });
 
-		const { name, description, sport, location, city, eventDate, packagePrice, photoPrice, status } = parsed.data;
+		const { name, description, sport, location, city, eventDate, packagePrice, packageMinPhotos, photoPrice, status } = parsed.data;
 		const packagePriceCents = packagePrice
 			? Math.round(parseFloat(packagePrice.replace(',', '.')) * 100)
+			: null;
+		const packageMinPhotosInt = packageMinPhotos
+			? Math.max(1, parseInt(packageMinPhotos, 10))
 			: null;
 		const photoPriceCents = photoPrice
 			? Math.max(100, Math.round(parseFloat(photoPrice.replace(',', '.')) * 100))
@@ -129,6 +134,7 @@ export const actions: Actions = {
 				city,
 				eventDate: new Date(eventDate),
 				packagePrice: packagePriceCents,
+				packageMinPhotos: packageMinPhotosInt,
 				photoPrice: photoPriceCents,
 				status,
 				...(coverUrl !== undefined ? { coverUrl } : {})
