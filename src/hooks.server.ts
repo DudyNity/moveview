@@ -12,6 +12,11 @@ export const handle: Handle = async ({ event, resolve }) => {
 		redirect(301, `https://${event.url.host}${event.url.pathname}${event.url.search}`);
 	}
 
+	// Redireciona domínio sem www para www
+	if (event.url.hostname === 'moveview.com.br') {
+		redirect(301, `https://www.moveview.com.br${event.url.pathname}${event.url.search}`);
+	}
+
 	const sessionId = event.cookies.get(lucia.sessionCookieName);
 
 	if (!sessionId) {
