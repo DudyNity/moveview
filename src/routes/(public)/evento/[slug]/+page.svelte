@@ -68,21 +68,123 @@
 	const isFutureEvent = $derived(data.event.isFuture ?? false);
 
 	// Face search
-	let faceSearchOpen = $state(false);
 	let faceInfoOpen = $state(false);
 	let faceConsentOpen = $state(false);
+	let faceCameraOpen = $state(false);
 	let faceSearching = $state(false);
 	let faceResults = $state<typeof allPhotos | null>(null);
 	let faceError = $state('');
-	let faceFileInput = $state<HTMLInputElement | null>(null);
+
+	let videoEl = $state<HTMLVideoElement | null>(null);
+	let canvasEl = $state<HTMLCanvasElement | null>(null);
+	let mediaStream = $state<MediaStream | null>(null);
+	let cameraError = $state('');
 
 	function openFaceConsent() {
 		faceConsentOpen = true;
 	}
 
-	function acceptFaceConsent() {
+	async function acceptFaceConsent() {
 		faceConsentOpen = false;
-		faceFileInput?.click();
+		cameraError = '';
+		faceCameraOpen = true;
+		await startCamera();
+	}
+
+	async function startCamera() {
+		try {
+			const stream = await navigator.mediaDevices.getUserMedia({
+				video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 640 } }
+			});
+			mediaStream = stream;
+			if (videoEl) {
+				videoEl.srcObject = stream;
+				videoEl.play();
+			}
+		} catch {
+			cameraError = 'Não foi possível acessar a câmera. Verifique as permissões do navegador.';
+		}
+	}
+
+	function stopCamera() {
+		mediaStream?.getTracks().forEach((t) => t.stop());
+		mediaStream = null;
+		faceCameraOpen = false;
+		cameraError = '';
+	}
+
+	async function captureAndSearch() {
+		if (!videoEl || !canvasEl) return;
+		const size = Math.min(videoEl.videoWidth, videoEl.videoHeight);
+		const offsetX = (videoEl.videoWidth - size) / 2;
+		const offsetY = (videoEl.videoHeight - size) / 2;
+		canvasEl.width = size;
+		canvasEl.height = size;
+		const ctx = canvasEl.getContext('2d')!;
+		ctx.drawImage(videoEl, offsetX, offsetY, size, size, 0, 0, size, size);
+		stopCamera();
+
+		faceSearching = true;
+		faceError = '';
+		faceResults = null;
+
+		try {
+			const blob = await new Promise<Blob>((res) =>
+				canvasEl!.toBlob((b) => res(b!), 'image/jpeg', 0.85)
+			);
+			const buffer = await blob.arrayBuffer();
+			const bytes = new Uint8Array(buffer);
+			let binary = '';
+			const chunk = 8192;
+			for (let i = 0; i < bytes.length; i += chunk) {
+				binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+			}
+			const base64 = btoa(binary);
+			const res = await fetch('/api/face', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ eventId: data.event.id, selfieBase64: base64 })
+			});
+			if (!res.ok) throw new Error((await res.json()).message ?? 'Erro na busca');
+			const json = await res.json();
+			faceResults = json.photos;
+		} catch (err: unknown) {
+			faceError = (err as Error).message ?? 'Erro ao buscar fotos';
+		} finally {
+			faceSearching = false;
+		}
+	}
+
+	async function searchByFace(e: Event) {
+		const input = e.target as HTMLInputElement;
+		const file = input.files?.[0];
+		if (!file) return;
+		faceSearching = true;
+		faceError = '';
+		faceResults = null;
+		try {
+			const buffer = await file.arrayBuffer();
+			const bytes = new Uint8Array(buffer);
+			let binary = '';
+			const chunk = 8192;
+			for (let i = 0; i < bytes.length; i += chunk) {
+				binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+			}
+			const base64 = btoa(binary);
+			const res = await fetch('/api/face', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ eventId: data.event.id, selfieBase64: base64 })
+			});
+			if (!res.ok) throw new Error((await res.json()).message ?? 'Erro na busca');
+			const json = await res.json();
+			faceResults = json.photos;
+		} catch (err: unknown) {
+			faceError = (err as Error).message ?? 'Erro ao buscar fotos';
+		} finally {
+			faceSearching = false;
+			input.value = '';
+		}
 	}
 
 	async function searchByFace(e: Event) {
@@ -240,13 +342,6 @@
 					<button class="face-btn" onclick={openFaceConsent}>
 						<Icon icon="lucide:scan-face" width="16" /> Minhas fotos
 					</button>
-					<input
-						bind:this={faceFileInput}
-						type="file"
-						accept="image/*"
-						onchange={searchByFace}
-						style="display:none"
-					/>
 				{/if}
 				<button class="face-info-btn" onclick={() => faceInfoOpen = !faceInfoOpen} aria-label="Como funciona">
 					<Icon icon="lucide:info" width="14" />
@@ -365,6 +460,65 @@
 				{/if}
 			</div>
 		{/if}
+	</div>
+{/if}
+
+<!-- Modal câmera com guia de enquadramento -->
+{#if faceCameraOpen}
+	<div class="camera-backdrop">
+		<div class="camera-modal">
+			<div class="camera-header">
+				<span>Posicione seu rosto no círculo</span>
+				<button class="camera-close" onclick={stopCamera}>
+					<Icon icon="lucide:x" width="16" />
+				</button>
+			</div>
+
+			<div class="camera-view">
+				<video bind:this={videoEl} autoplay playsinline muted class="camera-video"></video>
+				<canvas bind:this={canvasEl} style="display:none"></canvas>
+
+				<!-- Overlay de enquadramento -->
+				<div class="camera-overlay">
+					<div class="camera-overlay-top"></div>
+					<div class="camera-overlay-middle">
+						<div class="camera-overlay-side"></div>
+						<div class="camera-oval">
+							<svg viewBox="0 0 100 120" preserveAspectRatio="none">
+								<ellipse cx="50" cy="60" rx="46" ry="56"
+									fill="none"
+									stroke="rgba(61,201,13,0.9)"
+									stroke-width="2"
+									stroke-dasharray="6 3"
+								/>
+							</svg>
+							<div class="camera-oval-corner tl"></div>
+							<div class="camera-oval-corner tr"></div>
+							<div class="camera-oval-corner bl"></div>
+							<div class="camera-oval-corner br"></div>
+						</div>
+						<div class="camera-overlay-side"></div>
+					</div>
+					<div class="camera-overlay-bottom"></div>
+				</div>
+
+				{#if cameraError}
+					<div class="camera-error-msg">
+						<Icon icon="lucide:camera-off" width="20" />
+						<span>{cameraError}</span>
+					</div>
+				{/if}
+			</div>
+
+			<div class="camera-hint">
+				<Icon icon="lucide:lightbulb" width="13" />
+				Mantenha o rosto centralizado e bem iluminado
+			</div>
+
+			<button class="camera-capture" onclick={captureAndSearch} disabled={!!cameraError}>
+				<span class="camera-capture-inner"></span>
+			</button>
+		</div>
 	</div>
 {/if}
 
@@ -863,6 +1017,165 @@
 		.pricing-inner { flex-direction: column; align-items: stretch; gap: 8px; }
 		.pricing-divider { text-align: center; padding: 4px 0; }
 	}
+
+	/* Modal câmera */
+	.camera-backdrop {
+		position: fixed;
+		inset: 0;
+		background: #000;
+		z-index: 300;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.camera-modal {
+		width: 100%;
+		max-width: 420px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		padding: 0 0 32px;
+	}
+
+	.camera-header {
+		width: 100%;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 16px 20px;
+		color: white;
+		font-size: 0.9rem;
+		font-weight: 600;
+	}
+
+	.camera-close {
+		background: rgba(255,255,255,0.15);
+		border: none;
+		color: white;
+		width: 32px;
+		height: 32px;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+	}
+
+	.camera-view {
+		position: relative;
+		width: 100%;
+		aspect-ratio: 1;
+		overflow: hidden;
+		background: #111;
+	}
+
+	.camera-video {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		transform: scaleX(-1); /* espelho */
+	}
+
+	.camera-overlay {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.camera-overlay-top,
+	.camera-overlay-bottom {
+		background: rgba(0,0,0,0.55);
+		flex: 1;
+	}
+
+	.camera-overlay-middle {
+		display: flex;
+		flex: 4;
+	}
+
+	.camera-overlay-side {
+		background: rgba(0,0,0,0.55);
+		flex: 1;
+	}
+
+	.camera-oval {
+		flex: 5;
+		position: relative;
+	}
+
+	.camera-oval svg {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+	}
+
+	.camera-oval-corner {
+		position: absolute;
+		width: 20px;
+		height: 20px;
+		border-color: var(--accent);
+		border-style: solid;
+	}
+
+	.camera-oval-corner.tl { top: 4px; left: 4px; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+	.camera-oval-corner.tr { top: 4px; right: 4px; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
+	.camera-oval-corner.bl { bottom: 4px; left: 4px; border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
+	.camera-oval-corner.br { bottom: 4px; right: 4px; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+
+	.camera-error-msg {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 12px;
+		background: rgba(0,0,0,0.8);
+		color: #f87171;
+		font-size: 0.875rem;
+		text-align: center;
+		padding: 24px;
+	}
+
+	.camera-hint {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		color: rgba(255,255,255,0.5);
+		font-size: 0.78rem;
+		margin-top: 16px;
+		margin-bottom: 24px;
+	}
+
+	.camera-capture {
+		width: 72px;
+		height: 72px;
+		border-radius: 50%;
+		border: 4px solid white;
+		background: none;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: transform 0.1s;
+	}
+
+	.camera-capture:active { transform: scale(0.92); }
+	.camera-capture:disabled { opacity: 0.4; cursor: not-allowed; }
+
+	.camera-capture-inner {
+		width: 54px;
+		height: 54px;
+		border-radius: 50%;
+		background: white;
+		display: block;
+		transition: background 0.15s;
+	}
+
+	.camera-capture:active .camera-capture-inner { background: rgba(255,255,255,0.7); }
 
 	/* Modal consentimento facial */
 	.consent-backdrop {
