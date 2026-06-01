@@ -70,9 +70,20 @@
 	// Face search
 	let faceSearchOpen = $state(false);
 	let faceInfoOpen = $state(false);
+	let faceConsentOpen = $state(false);
 	let faceSearching = $state(false);
 	let faceResults = $state<typeof allPhotos | null>(null);
 	let faceError = $state('');
+	let faceFileInput = $state<HTMLInputElement | null>(null);
+
+	function openFaceConsent() {
+		faceConsentOpen = true;
+	}
+
+	function acceptFaceConsent() {
+		faceConsentOpen = false;
+		faceFileInput?.click();
+	}
 
 	async function searchByFace(e: Event) {
 		const input = e.target as HTMLInputElement;
@@ -226,10 +237,16 @@
 						<span class="face-spinner"></span> Buscando...
 					</button>
 				{:else}
-					<label class="face-btn">
+					<button class="face-btn" onclick={openFaceConsent}>
 						<Icon icon="lucide:scan-face" width="16" /> Minhas fotos
-						<input type="file" accept="image/*" onchange={searchByFace} style="display:none" />
-					</label>
+					</button>
+					<input
+						bind:this={faceFileInput}
+						type="file"
+						accept="image/*"
+						onchange={searchByFace}
+						style="display:none"
+					/>
 				{/if}
 				<button class="face-info-btn" onclick={() => faceInfoOpen = !faceInfoOpen} aria-label="Como funciona">
 					<Icon icon="lucide:info" width="14" />
@@ -348,6 +365,39 @@
 				{/if}
 			</div>
 		{/if}
+	</div>
+{/if}
+
+<!-- Modal de consentimento facial -->
+{#if faceConsentOpen}
+	<div class="consent-backdrop" onclick={() => faceConsentOpen = false}>
+		<div class="consent-modal" onclick={(e) => e.stopPropagation()}>
+			<div class="consent-icon">
+				<Icon icon="lucide:shield-check" width="28" />
+			</div>
+			<h3>Uso de reconhecimento facial</h3>
+			<p class="consent-desc">
+				Para encontrar suas fotos, precisamos analisar o rosto na imagem que você enviar.
+			</p>
+			<ul class="consent-list">
+				<li><Icon icon="lucide:check" width="13" /> A imagem é usada apenas para busca neste evento</li>
+				<li><Icon icon="lucide:check" width="13" /> Não armazenamos sua selfie</li>
+				<li><Icon icon="lucide:check" width="13" /> Os dados são processados de forma segura</li>
+				<li><Icon icon="lucide:check" width="13" /> Você pode recusar e buscar as fotos manualmente</li>
+			</ul>
+			<p class="consent-legal">
+				Ao continuar, você consente com o processamento da sua imagem facial conforme nossa
+				<a href="/privacidade" target="_blank">Política de Privacidade</a> e a LGPD.
+			</p>
+			<div class="consent-actions">
+				<button class="consent-btn-cancel" onclick={() => faceConsentOpen = false}>
+					Recusar
+				</button>
+				<button class="consent-btn-accept" onclick={acceptFaceConsent}>
+					<Icon icon="lucide:scan-face" width="15" /> Aceitar e continuar
+				</button>
+			</div>
+		</div>
 	</div>
 {/if}
 
@@ -813,6 +863,127 @@
 		.pricing-inner { flex-direction: column; align-items: stretch; gap: 8px; }
 		.pricing-divider { text-align: center; padding: 4px 0; }
 	}
+
+	/* Modal consentimento facial */
+	.consent-backdrop {
+		position: fixed;
+		inset: 0;
+		background: rgba(0,0,0,0.75);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 200;
+		padding: 20px;
+	}
+
+	.consent-modal {
+		background: var(--bg-card);
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-lg);
+		padding: 28px 24px;
+		max-width: 420px;
+		width: 100%;
+	}
+
+	.consent-icon {
+		width: 56px;
+		height: 56px;
+		border-radius: 50%;
+		background: rgba(61,201,13,0.1);
+		border: 1px solid rgba(61,201,13,0.25);
+		color: var(--accent);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		margin: 0 auto 16px;
+	}
+
+	.consent-modal h3 {
+		font-size: 1.1rem;
+		font-weight: 700;
+		text-align: center;
+		margin-bottom: 10px;
+	}
+
+	.consent-desc {
+		color: var(--text-muted);
+		font-size: 0.875rem;
+		text-align: center;
+		margin-bottom: 16px;
+		line-height: 1.5;
+	}
+
+	.consent-list {
+		list-style: none;
+		padding: 0;
+		margin: 0 0 16px;
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	.consent-list li {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		font-size: 0.82rem;
+		color: var(--text-secondary);
+	}
+
+	.consent-list li :global(svg) { color: var(--accent); flex-shrink: 0; }
+
+	.consent-legal {
+		font-size: 0.75rem;
+		color: var(--text-muted);
+		text-align: center;
+		margin-bottom: 20px;
+		line-height: 1.5;
+		padding: 10px;
+		background: var(--bg-elevated);
+		border-radius: var(--radius-sm);
+	}
+
+	.consent-legal a { color: var(--accent); text-decoration: none; }
+	.consent-legal a:hover { text-decoration: underline; }
+
+	.consent-actions {
+		display: flex;
+		gap: 10px;
+	}
+
+	.consent-btn-cancel {
+		flex: 1;
+		padding: 10px;
+		border-radius: var(--radius-sm);
+		border: 1px solid var(--border-color);
+		background: none;
+		color: var(--text-muted);
+		font-size: 0.875rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.2s;
+	}
+
+	.consent-btn-cancel:hover { background: var(--bg-elevated); color: var(--text-secondary); }
+
+	.consent-btn-accept {
+		flex: 2;
+		padding: 10px;
+		border-radius: var(--radius-sm);
+		border: none;
+		background: var(--accent);
+		color: #050507;
+		font-size: 0.875rem;
+		font-weight: 700;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 7px;
+		transition: opacity 0.2s;
+	}
+
+	.consent-btn-accept:hover { opacity: 0.85; }
 
 	/* Face search */
 	.face-btn {
