@@ -219,14 +219,22 @@
 				<span class="photo-count">{data.totalPhotos} foto{data.totalPhotos !== 1 ? 's' : ''}</span>
 			</div>
 
-			<label class="face-btn" title="Encontrar minhas fotos por reconhecimento facial">
-				{#if faceSearching}
-					<span class="face-spinner"></span> Buscando...
-				{:else}
-					<Icon icon="lucide:scan-face" width="16" /> Minhas fotos
-				{/if}
-				<input type="file" accept="image/*" capture="user" onchange={searchByFace} style="display:none" disabled={faceSearching} />
-			</label>
+			<div class="face-btn-wrap">
+				<label class="face-btn" title="Encontrar minhas fotos por reconhecimento facial">
+					{#if faceSearching}
+						<span class="face-spinner"></span> Buscando...
+					{:else}
+						<Icon icon="lucide:scan-face" width="16" /> Minhas fotos
+					{/if}
+					<input type="file" accept="image/*" capture="user" onchange={searchByFace} style="display:none" disabled={faceSearching} />
+				</label>
+				<div class="face-tooltip">
+					<Icon icon="lucide:scan-face" width="28" class="face-tooltip-icon" />
+					<strong>Encontre suas fotos pelo rosto</strong>
+					<p>Tire uma selfie ou envie uma foto do seu rosto e nosso sistema vai encontrar automaticamente todas as fotos em que você aparece neste evento.</p>
+					<span class="face-tooltip-tip">📸 Funciona melhor com o rosto bem iluminado e centralizado</span>
+				</div>
+			</div>
 
 			{#if packagePrice}
 				<button onclick={addPackageToCart} class="pkg-btn">
@@ -793,6 +801,63 @@
 	}
 
 	.face-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+	.face-btn-wrap {
+		position: relative;
+	}
+
+	.face-btn-wrap:hover .face-tooltip {
+		opacity: 1;
+		pointer-events: auto;
+		transform: translateY(0);
+	}
+
+	.face-tooltip {
+		position: absolute;
+		top: calc(100% + 10px);
+		left: 0;
+		width: 260px;
+		background: var(--bg-card);
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-md);
+		padding: 16px;
+		opacity: 0;
+		pointer-events: none;
+		transform: translateY(-6px);
+		transition: all 0.2s;
+		z-index: 50;
+		box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+		text-align: left;
+	}
+
+	.face-tooltip strong {
+		display: block;
+		font-size: 0.875rem;
+		color: var(--text-primary);
+		margin-bottom: 8px;
+	}
+
+	.face-tooltip p {
+		font-size: 0.8rem;
+		color: var(--text-muted);
+		line-height: 1.5;
+		margin: 0 0 10px;
+	}
+
+	.face-tooltip-icon {
+		color: var(--accent);
+		margin-bottom: 8px;
+		display: block;
+	}
+
+	.face-tooltip-tip {
+		display: block;
+		font-size: 0.75rem;
+		color: var(--text-muted);
+		background: var(--bg-elevated);
+		border-radius: var(--radius-xs);
+		padding: 6px 8px;
+	}
 
 	.face-spinner {
 		width: 13px;
