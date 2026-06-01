@@ -79,6 +79,8 @@
 	let canvasEl = $state<HTMLCanvasElement | null>(null);
 	let mediaStream = $state<MediaStream | null>(null);
 	let cameraError = $state('');
+	let torchOn = $state(false);
+	let torchSupported = $state(false);
 
 	function openFaceConsent() {
 		faceConsentOpen = true;
@@ -94,23 +96,44 @@
 	async function startCamera() {
 		try {
 			const stream = await navigator.mediaDevices.getUserMedia({
-				video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 640 } }
+				video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 1280 } }
 			});
 			mediaStream = stream;
 			if (videoEl) {
 				videoEl.srcObject = stream;
 				videoEl.play();
 			}
+			// Verifica suporte ao flash
+			const track = stream.getVideoTracks()[0];
+			const caps = track.getCapabilities() as MediaTrackCapabilities & { torch?: boolean };
+			torchSupported = !!caps?.torch;
+			torchOn = false;
 		} catch {
 			cameraError = 'Não foi possível acessar a câmera. Verifique as permissões do navegador.';
 		}
 	}
 
+	async function toggleTorch() {
+		if (!mediaStream || !torchSupported) return;
+		const track = mediaStream.getVideoTracks()[0];
+		torchOn = !torchOn;
+		try {
+			await track.applyConstraints({ advanced: [{ torch: torchOn } as MediaTrackConstraintSet] });
+		} catch {
+			torchOn = false;
+		}
+	}
+
 	function stopCamera() {
-		mediaStream?.getTracks().forEach((t) => t.stop());
+		if (mediaStream) {
+			const track = mediaStream.getVideoTracks()[0];
+			try { track.applyConstraints({ advanced: [{ torch: false } as MediaTrackConstraintSet] }); } catch {}
+			mediaStream.getTracks().forEach((t) => t.stop());
+		}
 		mediaStream = null;
 		faceCameraOpen = false;
 		cameraError = '';
+		torchOn = false;
 	}
 
 	async function captureAndSearch() {
@@ -461,9 +484,13 @@
 			</div>
 
 			<div class="camera-bottom">
-				<span class="camera-hint">
-					Centralize o rosto e tire a foto
-				</span>
+				{#if torchSupported}
+					<button class="camera-torch" onclick={toggleTorch} class:torch-on={torchOn}>
+						<Icon icon={torchOn ? 'lucide:zap' : 'lucide:zap-off'} width="20" />
+					</button>
+				{:else}
+					<div style="width:48px"></div>
+				{/if}
 				<button class="camera-capture" onclick={captureAndSearch} disabled={!!cameraError}>
 					<span class="camera-capture-ring">
 						<span class="camera-capture-inner"></span>
@@ -993,7 +1020,7 @@
 		position: absolute;
 		inset: 0;
 		background: radial-gradient(
-			ellipse 72% 34% at 50% 40%,
+			ellipse 58% 28% at 50% 38%,
 			transparent 99%,
 			rgba(0,0,0,0.68) 100%
 		);
@@ -1002,14 +1029,14 @@
 
 	.camera-oval-border {
 		position: absolute;
-		left: 14%;
-		right: 14%;
-		top: 16%;
-		bottom: 38%;
+		left: 21%;
+		right: 21%;
+		top: 18%;
+		bottom: 42%;
 		border-radius: 50%;
 		border: 2px solid rgba(61,201,13,0.85);
 		pointer-events: none;
-		box-shadow: 0 0 0 1px rgba(61,201,13,0.15), inset 0 0 0 1px rgba(61,201,13,0.1);
+		box-shadow: 0 0 0 1px rgba(61,201,13,0.12);
 	}
 
 	.camera-ui {
@@ -1125,6 +1152,27 @@
 	.camera-capture:active .camera-capture-inner {
 		background: var(--accent);
 		transform: scale(0.88);
+	}
+
+	.camera-torch {
+		width: 48px;
+		height: 48px;
+		border-radius: 50%;
+		border: none;
+		background: rgba(0,0,0,0.45);
+		backdrop-filter: blur(8px);
+		color: rgba(255,255,255,0.7);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		transition: all 0.2s;
+	}
+
+	.camera-torch.torch-on {
+		background: rgba(251,191,36,0.25);
+		color: #fbbf24;
+		box-shadow: 0 0 12px rgba(251,191,36,0.4);
 	}
 
 	/* Modal consentimento facial */
