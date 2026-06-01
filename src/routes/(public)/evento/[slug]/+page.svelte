@@ -432,58 +432,58 @@
 <!-- Modal câmera com guia de enquadramento -->
 {#if faceCameraOpen}
 	<div class="camera-backdrop">
-		<div class="camera-modal">
-			<div class="camera-header">
-				<span>Posicione seu rosto no círculo</span>
+		<video bind:this={videoEl} autoplay playsinline muted class="camera-video"></video>
+		<canvas bind:this={canvasEl} style="display:none"></canvas>
+
+		<!-- SVG overlay com recorte oval real -->
+		<svg class="camera-svg-overlay" viewBox="0 0 100 100" preserveAspectRatio="none">
+			<defs>
+				<mask id="face-mask">
+					<rect width="100" height="100" fill="white" />
+					<ellipse cx="50" cy="46" rx="32" ry="38" fill="black" />
+				</mask>
+			</defs>
+			<rect width="100" height="100" fill="rgba(0,0,0,0.62)" mask="url(#face-mask)" />
+			<ellipse cx="50" cy="46" rx="32" ry="38"
+				fill="none"
+				stroke="rgba(61,201,13,0.95)"
+				stroke-width="0.5"
+				vector-effect="non-scaling-stroke"
+			/>
+		</svg>
+
+		<!-- UI por cima do overlay -->
+		<div class="camera-ui">
+			<div class="camera-top-bar">
+				<div class="camera-title">
+					<Icon icon="lucide:scan-face" width="16" />
+					Posicione seu rosto
+				</div>
 				<button class="camera-close" onclick={stopCamera}>
 					<Icon icon="lucide:x" width="16" />
 				</button>
 			</div>
 
-			<div class="camera-view">
-				<video bind:this={videoEl} autoplay playsinline muted class="camera-video"></video>
-				<canvas bind:this={canvasEl} style="display:none"></canvas>
-
-				<!-- Overlay de enquadramento -->
-				<div class="camera-overlay">
-					<div class="camera-overlay-top"></div>
-					<div class="camera-overlay-middle">
-						<div class="camera-overlay-side"></div>
-						<div class="camera-oval">
-							<svg viewBox="0 0 100 120" preserveAspectRatio="none">
-								<ellipse cx="50" cy="60" rx="46" ry="56"
-									fill="none"
-									stroke="rgba(61,201,13,0.9)"
-									stroke-width="2"
-									stroke-dasharray="6 3"
-								/>
-							</svg>
-							<div class="camera-oval-corner tl"></div>
-							<div class="camera-oval-corner tr"></div>
-							<div class="camera-oval-corner bl"></div>
-							<div class="camera-oval-corner br"></div>
-						</div>
-						<div class="camera-overlay-side"></div>
-					</div>
-					<div class="camera-overlay-bottom"></div>
-				</div>
-
+			<div class="camera-middle">
 				{#if cameraError}
 					<div class="camera-error-msg">
-						<Icon icon="lucide:camera-off" width="20" />
+						<Icon icon="lucide:camera-off" width="24" />
 						<span>{cameraError}</span>
 					</div>
 				{/if}
 			</div>
 
-			<div class="camera-hint">
-				<Icon icon="lucide:lightbulb" width="13" />
-				Mantenha o rosto centralizado e bem iluminado
+			<div class="camera-bottom">
+				<span class="camera-hint">
+					Centralize o rosto e tire a foto
+				</span>
+				<button class="camera-capture" onclick={captureAndSearch} disabled={!!cameraError}>
+					<span class="camera-capture-ring">
+						<span class="camera-capture-inner"></span>
+					</span>
+				</button>
+				<div style="width:48px"></div>
 			</div>
-
-			<button class="camera-capture" onclick={captureAndSearch} disabled={!!cameraError}>
-				<span class="camera-capture-inner"></span>
-			</button>
 		</div>
 	</div>
 {/if}
@@ -990,158 +990,139 @@
 		inset: 0;
 		background: #000;
 		z-index: 300;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
-
-	.camera-modal {
-		width: 100%;
-		max-width: 420px;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		padding: 0 0 32px;
-	}
-
-	.camera-header {
-		width: 100%;
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		padding: 16px 20px;
-		color: white;
-		font-size: 0.9rem;
-		font-weight: 600;
-	}
-
-	.camera-close {
-		background: rgba(255,255,255,0.15);
-		border: none;
-		color: white;
-		width: 32px;
-		height: 32px;
-		border-radius: 50%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		cursor: pointer;
-	}
-
-	.camera-view {
-		position: relative;
-		width: 100%;
-		aspect-ratio: 1;
 		overflow: hidden;
-		background: #111;
 	}
 
 	.camera-video {
+		position: absolute;
+		inset: 0;
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
-		transform: scaleX(-1); /* espelho */
+		transform: scaleX(-1);
 	}
 
-	.camera-overlay {
-		position: absolute;
-		inset: 0;
-		display: flex;
-		flex-direction: column;
-	}
-
-	.camera-overlay-top,
-	.camera-overlay-bottom {
-		background: rgba(0,0,0,0.55);
-		flex: 1;
-	}
-
-	.camera-overlay-middle {
-		display: flex;
-		flex: 4;
-	}
-
-	.camera-overlay-side {
-		background: rgba(0,0,0,0.55);
-		flex: 1;
-	}
-
-	.camera-oval {
-		flex: 5;
-		position: relative;
-	}
-
-	.camera-oval svg {
+	.camera-svg-overlay {
 		position: absolute;
 		inset: 0;
 		width: 100%;
 		height: 100%;
 	}
 
-	.camera-oval-corner {
-		position: absolute;
-		width: 20px;
-		height: 20px;
-		border-color: var(--accent);
-		border-style: solid;
-	}
-
-	.camera-oval-corner.tl { top: 4px; left: 4px; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
-	.camera-oval-corner.tr { top: 4px; right: 4px; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
-	.camera-oval-corner.bl { bottom: 4px; left: 4px; border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
-	.camera-oval-corner.br { bottom: 4px; right: 4px; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
-
-	.camera-error-msg {
+	.camera-ui {
 		position: absolute;
 		inset: 0;
 		display: flex;
 		flex-direction: column;
+		justify-content: space-between;
+	}
+
+	.camera-top-bar {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 52px 24px 16px;
+	}
+
+	.camera-title {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		color: white;
+		font-size: 0.95rem;
+		font-weight: 600;
+		letter-spacing: 0.01em;
+		text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+	}
+
+	.camera-close {
+		width: 36px;
+		height: 36px;
+		border-radius: 50%;
+		border: none;
+		background: rgba(0,0,0,0.45);
+		backdrop-filter: blur(8px);
+		color: white;
+		display: flex;
 		align-items: center;
 		justify-content: center;
+		cursor: pointer;
+	}
+
+	.camera-middle {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.camera-error-msg {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
 		gap: 12px;
-		background: rgba(0,0,0,0.8);
+		background: rgba(0,0,0,0.7);
+		backdrop-filter: blur(8px);
 		color: #f87171;
 		font-size: 0.875rem;
 		text-align: center;
-		padding: 24px;
+		padding: 24px 32px;
+		border-radius: var(--radius-md);
+	}
+
+	.camera-bottom {
+		padding: 0 32px 48px;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
 	}
 
 	.camera-hint {
-		display: flex;
-		align-items: center;
-		gap: 6px;
-		color: rgba(255,255,255,0.5);
-		font-size: 0.78rem;
-		margin-top: 16px;
-		margin-bottom: 24px;
+		color: rgba(255,255,255,0.65);
+		font-size: 0.75rem;
+		text-align: center;
+		width: 80px;
+		line-height: 1.4;
+		text-shadow: 0 1px 3px rgba(0,0,0,0.6);
 	}
 
 	.camera-capture {
-		width: 72px;
-		height: 72px;
-		border-radius: 50%;
-		border: 4px solid white;
 		background: none;
+		border: none;
 		cursor: pointer;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		transition: transform 0.1s;
+		padding: 0;
+		transition: transform 0.12s;
 	}
 
 	.camera-capture:active { transform: scale(0.92); }
 	.camera-capture:disabled { opacity: 0.4; cursor: not-allowed; }
 
+	.camera-capture-ring {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 76px;
+		height: 76px;
+		border-radius: 50%;
+		border: 3px solid rgba(255,255,255,0.9);
+		transition: border-color 0.15s;
+	}
+
+	.camera-capture:active .camera-capture-ring { border-color: var(--accent); }
+
 	.camera-capture-inner {
-		width: 54px;
-		height: 54px;
+		width: 60px;
+		height: 60px;
 		border-radius: 50%;
 		background: white;
 		display: block;
-		transition: background 0.15s;
+		transition: background 0.12s, transform 0.12s;
 	}
 
-	.camera-capture:active .camera-capture-inner { background: rgba(255,255,255,0.7); }
+	.camera-capture:active .camera-capture-inner {
+		background: var(--accent);
+		transform: scale(0.88);
+	}
 
 	/* Modal consentimento facial */
 	.consent-backdrop {
