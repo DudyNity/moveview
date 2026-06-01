@@ -69,6 +69,7 @@
 
 	// Face search
 	let faceSearchOpen = $state(false);
+	let faceInfoOpen = $state(false);
 	let faceSearching = $state(false);
 	let faceResults = $state<typeof allPhotos | null>(null);
 	let faceError = $state('');
@@ -220,20 +221,19 @@
 			</div>
 
 			<div class="face-btn-wrap">
-				<label class="face-btn" title="Encontrar minhas fotos por reconhecimento facial">
-					{#if faceSearching}
+				{#if faceSearching}
+					<button class="face-btn" disabled>
 						<span class="face-spinner"></span> Buscando...
-					{:else}
+					</button>
+				{:else}
+					<label class="face-btn">
 						<Icon icon="lucide:scan-face" width="16" /> Minhas fotos
-					{/if}
-					<input type="file" accept="image/*" capture="user" onchange={searchByFace} style="display:none" disabled={faceSearching} />
-				</label>
-				<div class="face-tooltip">
-					<Icon icon="lucide:scan-face" width="28" class="face-tooltip-icon" />
-					<strong>Encontre suas fotos pelo rosto</strong>
-					<p>Tire uma selfie ou envie uma foto do seu rosto e nosso sistema vai encontrar automaticamente todas as fotos em que você aparece neste evento.</p>
-					<span class="face-tooltip-tip">📸 Funciona melhor com o rosto bem iluminado e centralizado</span>
-				</div>
+						<input type="file" accept="image/*" onchange={searchByFace} style="display:none" />
+					</label>
+				{/if}
+				<button class="face-info-btn" onclick={() => faceInfoOpen = !faceInfoOpen} aria-label="Como funciona">
+					<Icon icon="lucide:info" width="14" />
+				</button>
 			</div>
 
 			{#if packagePrice}
@@ -244,6 +244,23 @@
 			{/if}
 		</div>
 	</div>
+
+	<!-- Info panel reconhecimento facial -->
+	{#if faceInfoOpen}
+		<div class="face-info-panel">
+			<div class="face-info-inner">
+				<Icon icon="lucide:scan-face" width="22" />
+				<div class="face-info-text">
+					<strong>Como encontrar suas fotos</strong>
+					<p>Clique em <b>Minhas fotos</b>, tire uma selfie ou escolha uma foto do seu rosto. O sistema encontra automaticamente todas as fotos em que você aparece.</p>
+					<span class="face-info-tip">💡 Funciona melhor com rosto bem iluminado e centralizado</span>
+				</div>
+				<button class="face-info-close" onclick={() => faceInfoOpen = false}>
+					<Icon icon="lucide:x" width="14" />
+				</button>
+			</div>
+		</div>
+	{/if}
 
 	<!-- Resultados do reconhecimento facial -->
 	{#if faceError}
@@ -600,8 +617,8 @@
 		border-bottom: 1px solid var(--border-color);
 		position: sticky;
 		top: 64px;
-		z-index: 50;
-		padding: 12px 24px;
+		z-index: 40;
+		padding: 10px 16px;
 	}
 
 	.toolbar-inner {
@@ -610,11 +627,18 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		gap: 16px;
+		gap: 8px;
 		flex-wrap: wrap;
 	}
 
-	.toolbar-left { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+	.toolbar-left {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		flex-wrap: wrap;
+		flex: 1;
+		min-width: 0;
+	}
 
 	.photo-count { color: var(--text-muted); font-size: 0.9rem; }
 
@@ -773,6 +797,13 @@
 	@keyframes spin { to { transform: rotate(360deg); } }
 
 	@media (max-width: 720px) {
+		.toolbar { padding: 8px 12px; top: 56px; }
+		.toolbar-inner { gap: 6px; }
+		.pkg-btn { padding: 8px 12px; font-size: 0.8rem; }
+		.face-btn { padding: 8px 12px; font-size: 0.8rem; }
+		.face-info-panel { padding: 10px 12px; }
+		.photo-count { font-size: 0.82rem; }
+
 		.hero-body { flex-direction: column; align-items: flex-start; gap: 20px; }
 		.hero-stat-card { width: 100%; }
 		.event-hero-overlay { padding: 20px 20px 28px; }
@@ -803,60 +834,74 @@
 	.face-btn:hover { border-color: var(--accent); color: var(--accent); }
 
 	.face-btn-wrap {
-		position: relative;
+		display: flex;
+		align-items: center;
+		gap: 4px;
 	}
 
-	.face-btn-wrap:hover .face-tooltip {
-		opacity: 1;
-		pointer-events: auto;
-		transform: translateY(0);
-	}
-
-	.face-tooltip {
-		position: absolute;
-		top: calc(100% + 10px);
-		left: 0;
-		width: 260px;
-		background: var(--bg-card);
-		border: 1px solid var(--border-color);
-		border-radius: var(--radius-md);
-		padding: 16px;
-		opacity: 0;
-		pointer-events: none;
-		transform: translateY(-6px);
-		transition: all 0.2s;
-		z-index: 50;
-		box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-		text-align: left;
-	}
-
-	.face-tooltip strong {
-		display: block;
-		font-size: 0.875rem;
-		color: var(--text-primary);
-		margin-bottom: 8px;
-	}
-
-	.face-tooltip p {
-		font-size: 0.8rem;
+	.face-info-btn {
+		background: none;
+		border: none;
 		color: var(--text-muted);
-		line-height: 1.5;
-		margin: 0 0 10px;
+		cursor: pointer;
+		padding: 4px;
+		display: flex;
+		align-items: center;
+		transition: color 0.2s;
 	}
 
-	.face-tooltip-icon {
+	.face-info-btn:hover { color: var(--text-secondary); }
+
+	.face-info-panel {
+		background: rgba(61,201,13,0.05);
+		border-bottom: 1px solid rgba(61,201,13,0.15);
+		padding: 12px 24px;
+	}
+
+	.face-info-inner {
+		max-width: 1280px;
+		margin: 0 auto;
+		display: flex;
+		align-items: flex-start;
+		gap: 12px;
 		color: var(--accent);
-		margin-bottom: 8px;
-		display: block;
 	}
 
-	.face-tooltip-tip {
+	.face-info-text {
+		flex: 1;
+		font-size: 0.85rem;
+	}
+
+	.face-info-text strong {
 		display: block;
-		font-size: 0.75rem;
+		color: var(--text-primary);
+		margin-bottom: 4px;
+		font-size: 0.875rem;
+	}
+
+	.face-info-text p {
+		color: var(--text-muted);
+		margin: 0 0 8px;
+		line-height: 1.5;
+	}
+
+	.face-info-tip {
+		display: inline-block;
+		font-size: 0.78rem;
 		color: var(--text-muted);
 		background: var(--bg-elevated);
 		border-radius: var(--radius-xs);
-		padding: 6px 8px;
+		padding: 4px 8px;
+	}
+
+	.face-info-close {
+		background: none;
+		border: none;
+		color: var(--text-muted);
+		cursor: pointer;
+		padding: 2px;
+		display: flex;
+		flex-shrink: 0;
 	}
 
 	.face-spinner {
