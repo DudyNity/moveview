@@ -3,6 +3,7 @@ import { json, error } from '@sveltejs/kit';
 import { db, schema } from '$lib/server/db/index.js';
 import { eq, and } from 'drizzle-orm';
 import { uploadFile, getPublicUrl } from '$lib/server/storage/r2.js';
+import { indexPhotoFaces } from '$lib/server/face.js';
 import { processUploadedPhoto } from '$lib/server/watermark/apply.js';
 import { isRateLimited } from '$lib/server/rate-limit.js';
 import {
@@ -101,9 +102,13 @@ export const POST: RequestHandler = async ({ request, locals, getClientAddress }
 		})
 		.returning({ id: schema.photos.id, watermarkKey: schema.photos.watermarkKey });
 
+	// Indexa faces em background — não bloqueia a resposta
+	const watermarkPublicUrl = getPublicUrl(photo.watermarkKey);
+	indexPhotoFaces(photo.id, eventId, watermarkPublicUrl);
+
 	return json({
 		id: photo.id,
-		watermarkUrl: getPublicUrl(photo.watermarkKey),
+		watermarkUrl: watermarkPublicUrl,
 		width,
 		height
 	});

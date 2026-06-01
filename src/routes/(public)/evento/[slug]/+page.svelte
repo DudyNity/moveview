@@ -67,6 +67,40 @@
 
 	const isFutureEvent = $derived(data.event.isFuture ?? false);
 
+	// Face search
+	let faceSearchOpen = $state(false);
+	let faceSearching = $state(false);
+	let faceResults = $state<typeof allPhotos | null>(null);
+	let faceError = $state('');
+
+	async function searchByFace(e: Event) {
+		const input = e.target as HTMLInputElement;
+		const file = input.files?.[0];
+		if (!file) return;
+
+		faceSearching = true;
+		faceError = '';
+		faceResults = null;
+
+		try {
+			const buffer = await file.arrayBuffer();
+			const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+			const res = await fetch('/api/face', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ eventId: data.event.id, selfieBase64: base64 })
+			});
+			if (!res.ok) throw new Error((await res.json()).message ?? 'Erro na busca');
+			const json = await res.json();
+			faceResults = json.photos;
+		} catch (err: unknown) {
+			faceError = (err as Error).message ?? 'Erro ao buscar fotos';
+		} finally {
+			faceSearching = false;
+			input.value = '';
+		}
+	}
+
 	// Pricing comparison — use event-level photoPrice
 	const photoPrice = $derived(data.event.photoPrice ?? 2900);
 	const packagePrice = $derived(data.event.packagePrice);
@@ -179,6 +213,15 @@
 				<span class="photo-count">{data.totalPhotos} foto{data.totalPhotos !== 1 ? 's' : ''}</span>
 			</div>
 
+			<label class="face-btn" title="Encontrar minhas fotos por reconhecimento facial">
+				{#if faceSearching}
+					<span class="face-spinner"></span> Buscando...
+				{:else}
+					<Icon icon="lucide:scan-face" width="16" /> Minhas fotos
+				{/if}
+				<input type="file" accept="image/*" capture="user" onchange={searchByFace} style="display:none" disabled={faceSearching} />
+			</label>
+
 			{#if packagePrice}
 				<button onclick={addPackageToCart} class="pkg-btn">
 					<Icon icon="lucide:package" width="16" />
@@ -187,6 +230,38 @@
 			{/if}
 		</div>
 	</div>
+
+	<!-- Resultados do reconhecimento facial -->
+	{#if faceError}
+		<div class="face-error">
+			<Icon icon="lucide:alert-circle" width="14" /> {faceError}
+		</div>
+	{/if}
+
+	{#if faceResults !== null}
+		<div class="face-results">
+			<div class="face-results-header">
+				<Icon icon="lucide:scan-face" width="16" />
+				{#if faceResults.length === 0}
+					<span>Nenhuma foto encontrada com seu rosto neste evento.</span>
+				{:else}
+					<span>{faceResults.length} foto{faceResults.length !== 1 ? 's' : ''} encontrada{faceResults.length !== 1 ? 's' : ''} com seu rosto</span>
+				{/if}
+				<button class="face-close" onclick={() => faceResults = null}>
+					<Icon icon="lucide:x" width="14" />
+				</button>
+			</div>
+			{#if faceResults.length > 0}
+				<div class="face-grid">
+					{#each faceResults as photo (photo.id)}
+						<div class="face-photo-wrap">
+							<img src={photo.watermarkUrl} alt="Sua foto" class="face-photo" />
+						</div>
+					{/each}
+				</div>
+			{/if}
+		</div>
+	{/if}
 
 	<!-- Pricing Comparison Banner -->
 	{#if packagePrice && data.totalPhotos > 1}
@@ -693,4 +768,87 @@
 		.pricing-inner { flex-direction: column; align-items: stretch; gap: 8px; }
 		.pricing-divider { text-align: center; padding: 4px 0; }
 	}
+
+	/* Face search */
+	.face-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 7px;
+		background: var(--bg-elevated);
+		border: 1px solid var(--border-color);
+		color: var(--text-secondary);
+		padding: 8px 16px;
+		border-radius: var(--radius-sm);
+		font-size: 0.85rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.2s;
+		white-space: nowrap;
+	}
+
+	.face-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+	.face-spinner {
+		width: 13px;
+		height: 13px;
+		border: 2px solid var(--border-color);
+		border-top-color: var(--accent);
+		border-radius: 50%;
+		animation: spin 0.7s linear infinite;
+		display: inline-block;
+	}
+
+	.face-error {
+		max-width: 1280px;
+		margin: 0 auto;
+		padding: 10px 24px;
+		color: #f87171;
+		font-size: 0.875rem;
+		display: flex;
+		align-items: center;
+		gap: 6px;
+	}
+
+	.face-results {
+		max-width: 1280px;
+		margin: 0 auto 8px;
+		padding: 0 24px;
+	}
+
+	.face-results-header {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 12px 16px;
+		background: rgba(61,201,13,0.07);
+		border: 1px solid rgba(61,201,13,0.2);
+		border-radius: var(--radius-sm);
+		font-size: 0.875rem;
+		color: var(--accent);
+		margin-bottom: 12px;
+	}
+
+	.face-close {
+		margin-left: auto;
+		background: none;
+		border: none;
+		color: var(--text-muted);
+		cursor: pointer;
+		padding: 2px;
+		display: flex;
+	}
+
+	.face-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+		gap: 8px;
+	}
+
+	.face-photo-wrap {
+		border-radius: var(--radius-sm);
+		overflow: hidden;
+		border: 1px solid var(--accent);
+	}
+
+	.face-photo { width: 100%; aspect-ratio: 3/4; object-fit: cover; display: block; }
 </style>
