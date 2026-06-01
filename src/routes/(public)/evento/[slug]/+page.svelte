@@ -435,22 +435,9 @@
 		<video bind:this={videoEl} autoplay playsinline muted class="camera-video"></video>
 		<canvas bind:this={canvasEl} style="display:none"></canvas>
 
-		<!-- SVG overlay com recorte oval real -->
-		<svg class="camera-svg-overlay" viewBox="0 0 100 100" preserveAspectRatio="none">
-			<defs>
-				<mask id="face-mask">
-					<rect width="100" height="100" fill="white" />
-					<ellipse cx="50" cy="46" rx="32" ry="38" fill="black" />
-				</mask>
-			</defs>
-			<rect width="100" height="100" fill="rgba(0,0,0,0.62)" mask="url(#face-mask)" />
-			<ellipse cx="50" cy="46" rx="32" ry="38"
-				fill="none"
-				stroke="rgba(61,201,13,0.95)"
-				stroke-width="0.5"
-				vector-effect="non-scaling-stroke"
-			/>
-		</svg>
+		<!-- Overlay escuro com recorte oval via CSS -->
+		<div class="camera-overlay"></div>
+		<div class="camera-oval-border"></div>
 
 		<!-- UI por cima do overlay -->
 		<div class="camera-ui">
@@ -1002,11 +989,27 @@
 		transform: scaleX(-1);
 	}
 
-	.camera-svg-overlay {
+	.camera-overlay {
 		position: absolute;
 		inset: 0;
-		width: 100%;
-		height: 100%;
+		background: radial-gradient(
+			ellipse 72% 34% at 50% 40%,
+			transparent 99%,
+			rgba(0,0,0,0.68) 100%
+		);
+		pointer-events: none;
+	}
+
+	.camera-oval-border {
+		position: absolute;
+		left: 14%;
+		right: 14%;
+		top: 16%;
+		bottom: 38%;
+		border-radius: 50%;
+		border: 2px solid rgba(61,201,13,0.85);
+		pointer-events: none;
+		box-shadow: 0 0 0 1px rgba(61,201,13,0.15), inset 0 0 0 1px rgba(61,201,13,0.1);
 	}
 
 	.camera-ui {
