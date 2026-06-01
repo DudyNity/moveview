@@ -491,11 +491,14 @@
 				{:else}
 					<div style="width:48px"></div>
 				{/if}
-				<button class="camera-capture" onclick={captureAndSearch} disabled={!!cameraError}>
-					<span class="camera-capture-ring">
-						<span class="camera-capture-inner"></span>
-					</span>
-				</button>
+				<div class="camera-capture-wrap">
+					<span class="camera-hint">Afaste o celular e encaixe o rosto</span>
+					<button class="camera-capture" onclick={captureAndSearch} disabled={!!cameraError}>
+						<span class="camera-capture-ring">
+							<span class="camera-capture-inner"></span>
+						</span>
+					</button>
+				</div>
 				<div style="width:48px"></div>
 			</div>
 		</div>
@@ -1012,32 +1015,30 @@
 		inset: 0;
 		width: 100%;
 		height: 100%;
-		object-fit: contain;
+		object-fit: cover;
 		transform: scaleX(-1);
-		background: #000;
 	}
 
 	.camera-overlay {
 		position: absolute;
 		inset: 0;
 		background: radial-gradient(
-			ellipse 58% 28% at 50% 38%,
+			ellipse 50% 26% at 50% 40%,
 			transparent 99%,
-			rgba(0,0,0,0.68) 100%
+			rgba(0,0,0,0.72) 100%
 		);
 		pointer-events: none;
 	}
 
 	.camera-oval-border {
 		position: absolute;
-		left: 21%;
-		right: 21%;
-		top: 18%;
-		bottom: 42%;
+		left: 25%;
+		right: 25%;
+		top: 22%;
+		bottom: 46%;
 		border-radius: 50%;
-		border: 2px solid rgba(61,201,13,0.85);
+		border: 2px solid rgba(61,201,13,0.9);
 		pointer-events: none;
-		box-shadow: 0 0 0 1px rgba(61,201,13,0.12);
 	}
 
 	.camera-ui {
@@ -1108,13 +1109,19 @@
 		justify-content: space-between;
 	}
 
+	.camera-capture-wrap {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 10px;
+	}
+
 	.camera-hint {
 		color: rgba(255,255,255,0.65);
-		font-size: 0.75rem;
+		font-size: 0.72rem;
 		text-align: center;
-		width: 80px;
 		line-height: 1.4;
-		text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+		text-shadow: 0 1px 3px rgba(0,0,0,0.8);
 	}
 
 	.camera-capture {
