@@ -96,7 +96,7 @@
 	async function startCamera() {
 		try {
 			const stream = await navigator.mediaDevices.getUserMedia({
-				video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 1280 } }
+				video: { facingMode: 'user', width: { ideal: 720 }, height: { ideal: 1280 } }
 			});
 			mediaStream = stream;
 			if (videoEl) {
@@ -1012,8 +1012,9 @@
 		inset: 0;
 		width: 100%;
 		height: 100%;
-		object-fit: cover;
+		object-fit: contain;
 		transform: scaleX(-1);
+		background: #000;
 	}
 
 	.camera-overlay {
