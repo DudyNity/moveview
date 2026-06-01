@@ -187,40 +187,6 @@
 		}
 	}
 
-	async function searchByFace(e: Event) {
-		const input = e.target as HTMLInputElement;
-		const file = input.files?.[0];
-		if (!file) return;
-
-		faceSearching = true;
-		faceError = '';
-		faceResults = null;
-
-		try {
-			const buffer = await file.arrayBuffer();
-			const bytes = new Uint8Array(buffer);
-			let binary = '';
-			const chunk = 8192;
-			for (let i = 0; i < bytes.length; i += chunk) {
-				binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
-			}
-			const base64 = btoa(binary);
-			const res = await fetch('/api/face', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ eventId: data.event.id, selfieBase64: base64 })
-			});
-			if (!res.ok) throw new Error((await res.json()).message ?? 'Erro na busca');
-			const json = await res.json();
-			faceResults = json.photos;
-		} catch (err: unknown) {
-			faceError = (err as Error).message ?? 'Erro ao buscar fotos';
-		} finally {
-			faceSearching = false;
-			input.value = '';
-		}
-	}
-
 	// Pricing comparison — use event-level photoPrice
 	const photoPrice = $derived(data.event.photoPrice ?? 2900);
 	const packagePrice = $derived(data.event.packagePrice);
