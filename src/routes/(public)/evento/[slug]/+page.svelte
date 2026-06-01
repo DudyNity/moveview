@@ -455,26 +455,22 @@
 <!-- Modal câmera com guia de enquadramento -->
 {#if faceCameraOpen}
 	<div class="camera-backdrop">
-		<video bind:this={videoEl} autoplay playsinline muted class="camera-video"></video>
 		<canvas bind:this={canvasEl} style="display:none"></canvas>
 
-		<!-- Overlay escuro com recorte oval via CSS -->
-		<div class="camera-overlay"></div>
-		<div class="camera-oval-border"></div>
-
-		<!-- UI por cima do overlay -->
-		<div class="camera-ui">
-			<div class="camera-top-bar">
-				<div class="camera-title">
-					<Icon icon="lucide:scan-face" width="16" />
-					Posicione seu rosto
-				</div>
-				<button class="camera-close" onclick={stopCamera}>
-					<Icon icon="lucide:x" width="16" />
-				</button>
+		<div class="camera-top-bar">
+			<div class="camera-title">
+				<Icon icon="lucide:scan-face" width="16" />
+				Posicione seu rosto
 			</div>
+			<button class="camera-close" onclick={stopCamera}>
+				<Icon icon="lucide:x" width="16" />
+			</button>
+		</div>
 
-			<div class="camera-middle">
+		<div class="camera-stage">
+			<div class="camera-frame">
+				<video bind:this={videoEl} autoplay playsinline muted class="camera-video"></video>
+				<div class="camera-oval-border"></div>
 				{#if cameraError}
 					<div class="camera-error-msg">
 						<Icon icon="lucide:camera-off" width="24" />
@@ -482,25 +478,23 @@
 					</div>
 				{/if}
 			</div>
+			<p class="camera-hint">Encaixe o rosto no círculo e tire a foto</p>
+		</div>
 
-			<div class="camera-bottom">
-				{#if torchSupported}
-					<button class="camera-torch" onclick={toggleTorch} class:torch-on={torchOn}>
-						<Icon icon={torchOn ? 'lucide:zap' : 'lucide:zap-off'} width="20" />
-					</button>
-				{:else}
-					<div style="width:48px"></div>
-				{/if}
-				<div class="camera-capture-wrap">
-					<span class="camera-hint">Afaste o celular e encaixe o rosto</span>
-					<button class="camera-capture" onclick={captureAndSearch} disabled={!!cameraError}>
-						<span class="camera-capture-ring">
-							<span class="camera-capture-inner"></span>
-						</span>
-					</button>
-				</div>
-				<div style="width:48px"></div>
-			</div>
+		<div class="camera-bottom">
+			{#if torchSupported}
+				<button class="camera-torch" onclick={toggleTorch} class:torch-on={torchOn}>
+					<Icon icon={torchOn ? 'lucide:zap' : 'lucide:zap-off'} width="20" />
+				</button>
+			{:else}
+				<div style="width:52px"></div>
+			{/if}
+			<button class="camera-capture" onclick={captureAndSearch} disabled={!!cameraError}>
+				<span class="camera-capture-ring">
+					<span class="camera-capture-inner"></span>
+				</span>
+			</button>
+			<div style="width:52px"></div>
 		</div>
 	</div>
 {/if}
@@ -1005,55 +999,20 @@
 	.camera-backdrop {
 		position: fixed;
 		inset: 0;
-		background: #000;
+		background: #0a0a0a;
 		z-index: 300;
-		overflow: hidden;
-	}
-
-	.camera-video {
-		position: absolute;
-		inset: 0;
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-		transform: scaleX(-1);
-	}
-
-	.camera-overlay {
-		position: absolute;
-		inset: 0;
-		background: radial-gradient(
-			ellipse 50% 26% at 50% 40%,
-			transparent 99%,
-			rgba(0,0,0,0.72) 100%
-		);
-		pointer-events: none;
-	}
-
-	.camera-oval-border {
-		position: absolute;
-		left: 25%;
-		right: 25%;
-		top: 22%;
-		bottom: 46%;
-		border-radius: 50%;
-		border: 2px solid rgba(61,201,13,0.9);
-		pointer-events: none;
-	}
-
-	.camera-ui {
-		position: absolute;
-		inset: 0;
 		display: flex;
 		flex-direction: column;
-		justify-content: space-between;
+		align-items: center;
 	}
 
 	.camera-top-bar {
+		width: 100%;
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding: 52px 24px 16px;
+		padding: 52px 20px 12px;
+		flex-shrink: 0;
 	}
 
 	.camera-title {
@@ -1061,19 +1020,16 @@
 		align-items: center;
 		gap: 8px;
 		color: white;
-		font-size: 0.95rem;
+		font-size: 0.9rem;
 		font-weight: 600;
-		letter-spacing: 0.01em;
-		text-shadow: 0 1px 4px rgba(0,0,0,0.5);
 	}
 
 	.camera-close {
-		width: 36px;
-		height: 36px;
+		width: 34px;
+		height: 34px;
 		border-radius: 50%;
 		border: none;
-		background: rgba(0,0,0,0.45);
-		backdrop-filter: blur(8px);
+		background: rgba(255,255,255,0.12);
 		color: white;
 		display: flex;
 		align-items: center;
@@ -1081,47 +1037,74 @@
 		cursor: pointer;
 	}
 
-	.camera-middle {
+	.camera-stage {
 		flex: 1;
 		display: flex;
+		flex-direction: column;
 		align-items: center;
 		justify-content: center;
+		gap: 16px;
+		padding: 0 24px;
+		width: 100%;
 	}
 
-	.camera-error-msg {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 12px;
-		background: rgba(0,0,0,0.7);
-		backdrop-filter: blur(8px);
-		color: #f87171;
-		font-size: 0.875rem;
-		text-align: center;
-		padding: 24px 32px;
-		border-radius: var(--radius-md);
+	.camera-frame {
+		position: relative;
+		width: 100%;
+		max-width: 320px;
+		aspect-ratio: 3/4;
+		border-radius: 16px;
+		overflow: hidden;
+		background: #111;
+		border: 1px solid rgba(255,255,255,0.08);
 	}
 
-	.camera-bottom {
-		padding: 0 32px 48px;
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
+	.camera-video {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		transform: scaleX(-1);
+		display: block;
 	}
 
-	.camera-capture-wrap {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 10px;
+	.camera-oval-border {
+		position: absolute;
+		inset: 10%;
+		border-radius: 50%;
+		border: 2px solid rgba(61,201,13,0.9);
+		pointer-events: none;
+		box-shadow: 0 0 0 9999px rgba(0,0,0,0.45);
 	}
 
 	.camera-hint {
-		color: rgba(255,255,255,0.65);
-		font-size: 0.72rem;
+		color: rgba(255,255,255,0.45);
+		font-size: 0.8rem;
 		text-align: center;
-		line-height: 1.4;
-		text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+	}
+
+	.camera-error-msg {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 12px;
+		background: rgba(0,0,0,0.8);
+		color: #f87171;
+		font-size: 0.875rem;
+		text-align: center;
+		padding: 24px;
+		border-radius: 16px;
+	}
+
+	.camera-bottom {
+		width: 100%;
+		padding: 16px 32px 48px;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		flex-shrink: 0;
 	}
 
 	.camera-capture {
@@ -1139,8 +1122,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 76px;
-		height: 76px;
+		width: 72px;
+		height: 72px;
 		border-radius: 50%;
 		border: 3px solid rgba(255,255,255,0.9);
 		transition: border-color 0.15s;
@@ -1149,8 +1132,8 @@
 	.camera-capture:active .camera-capture-ring { border-color: var(--accent); }
 
 	.camera-capture-inner {
-		width: 60px;
-		height: 60px;
+		width: 56px;
+		height: 56px;
 		border-radius: 50%;
 		background: white;
 		display: block;
@@ -1163,12 +1146,11 @@
 	}
 
 	.camera-torch {
-		width: 48px;
-		height: 48px;
+		width: 52px;
+		height: 52px;
 		border-radius: 50%;
 		border: none;
-		background: rgba(0,0,0,0.45);
-		backdrop-filter: blur(8px);
+		background: rgba(255,255,255,0.08);
 		color: rgba(255,255,255,0.7);
 		display: flex;
 		align-items: center;
@@ -1178,9 +1160,9 @@
 	}
 
 	.camera-torch.torch-on {
-		background: rgba(251,191,36,0.25);
+		background: rgba(251,191,36,0.2);
 		color: #fbbf24;
-		box-shadow: 0 0 12px rgba(251,191,36,0.4);
+		box-shadow: 0 0 12px rgba(251,191,36,0.3);
 	}
 
 	/* Modal consentimento facial */
