@@ -81,9 +81,6 @@
 	let cameraError = $state('');
 	let torchOn = $state(false);
 	let torchSupported = $state(false);
-	let zoomLevel = $state(1);
-	let zoomMin = $state(1);
-	let zoomMax = $state(3);
 
 	function openFaceConsent() {
 		faceConsentOpen = true;
@@ -108,27 +105,11 @@
 			}
 			// Verifica suporte ao flash e zoom nativo
 			const track = stream.getVideoTracks()[0];
-			const caps = track.getCapabilities() as MediaTrackCapabilities & { torch?: boolean; zoom?: { min: number; max: number } };
+			const caps = track.getCapabilities() as MediaTrackCapabilities & { torch?: boolean };
 			torchSupported = !!caps?.torch;
 			torchOn = false;
-			zoomLevel = 1;
-			if (caps?.zoom) {
-				zoomMin = caps.zoom.min;
-				zoomMax = Math.min(caps.zoom.max, 5);
-			}
 		} catch {
 			cameraError = 'Não foi possível acessar a câmera. Verifique as permissões do navegador.';
-		}
-	}
-
-	async function applyZoom(val: number) {
-		zoomLevel = Math.max(zoomMin, Math.min(zoomMax, val));
-		if (!mediaStream) return;
-		const track = mediaStream.getVideoTracks()[0];
-		try {
-			await track.applyConstraints({ advanced: [{ zoom: zoomLevel } as MediaTrackConstraintSet] });
-		} catch {
-			// zoom nativo não suportado — usa só CSS transform
 		}
 	}
 
@@ -488,7 +469,7 @@
 
 		<div class="camera-stage">
 			<div class="camera-frame">
-				<video bind:this={videoEl} autoplay playsinline muted class="camera-video" style="transform: scaleX(-1) scale({zoomLevel})"></video>
+				<video bind:this={videoEl} autoplay playsinline muted class="camera-video"></video>
 				<div class="camera-oval-border"></div>
 				{#if cameraError}
 					<div class="camera-error-msg">
@@ -498,25 +479,6 @@
 				{/if}
 			</div>
 			<p class="camera-hint">Encaixe o rosto no círculo e tire a foto</p>
-
-			<div class="zoom-control">
-				<button class="zoom-btn" onclick={() => applyZoom(zoomLevel - 0.25)} disabled={zoomLevel <= zoomMin}>
-					<Icon icon="lucide:zoom-out" width="16" />
-				</button>
-				<input
-					type="range"
-					class="zoom-slider"
-					min={zoomMin}
-					max={zoomMax}
-					step="0.1"
-					value={zoomLevel}
-					oninput={(e) => applyZoom(parseFloat((e.target as HTMLInputElement).value))}
-				/>
-				<button class="zoom-btn" onclick={() => applyZoom(zoomLevel + 0.25)} disabled={zoomLevel >= zoomMax}>
-					<Icon icon="lucide:zoom-in" width="16" />
-				</button>
-				<span class="zoom-label">{zoomLevel.toFixed(1)}×</span>
-			</div>
 		</div>
 
 		<div class="camera-bottom">
@@ -1102,7 +1064,7 @@
 		height: 100%;
 		object-fit: cover;
 		display: block;
-		transform-origin: center center;
+		transform: scaleX(-1);
 	}
 
 	.camera-oval-border {
@@ -1203,60 +1165,6 @@
 		box-shadow: 0 0 12px rgba(251,191,36,0.3);
 	}
 
-	.zoom-control {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		width: 100%;
-		max-width: 320px;
-	}
-
-	.zoom-btn {
-		background: rgba(255,255,255,0.1);
-		border: none;
-		color: white;
-		width: 32px;
-		height: 32px;
-		border-radius: 50%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		cursor: pointer;
-		flex-shrink: 0;
-		transition: background 0.15s;
-	}
-
-	.zoom-btn:hover { background: rgba(255,255,255,0.18); }
-	.zoom-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-
-	.zoom-slider {
-		flex: 1;
-		-webkit-appearance: none;
-		height: 3px;
-		border-radius: 2px;
-		background: rgba(255,255,255,0.2);
-		outline: none;
-		cursor: pointer;
-	}
-
-	.zoom-slider::-webkit-slider-thumb {
-		-webkit-appearance: none;
-		width: 18px;
-		height: 18px;
-		border-radius: 50%;
-		background: white;
-		cursor: pointer;
-		box-shadow: 0 1px 4px rgba(0,0,0,0.4);
-	}
-
-	.zoom-label {
-		color: rgba(255,255,255,0.6);
-		font-size: 0.75rem;
-		font-weight: 600;
-		width: 30px;
-		text-align: right;
-		flex-shrink: 0;
-	}
 
 	/* Modal consentimento facial */
 	.consent-backdrop {
