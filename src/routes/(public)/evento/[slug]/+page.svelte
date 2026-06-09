@@ -344,8 +344,7 @@
 						<Icon icon="lucide:info" width="14" />
 					</button>
 				</div>
-				<span class="face-feature-label">por IA</span>
-			</div>
+				</div>
 
 			{#if packagePrice}
 				<button onclick={addPackageToCart} class="pkg-btn">
