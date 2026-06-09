@@ -324,19 +324,27 @@
 				<span class="photo-count">{data.totalPhotos} foto{data.totalPhotos !== 1 ? 's' : ''}</span>
 			</div>
 
-			<div class="face-btn-wrap">
-				{#if faceSearching}
-					<button class="face-btn" disabled>
-						<span class="face-spinner"></span> Buscando...
+			<div class="face-feature-wrap">
+				<div class="face-new-badge">
+					<span class="face-new-pulse"></span>
+					<Icon icon="lucide:sparkles" width="11" />
+					Novo
+				</div>
+				<div class="face-btn-wrap">
+					{#if faceSearching}
+						<button class="face-btn" disabled>
+							<span class="face-spinner"></span> Buscando...
+						</button>
+					{:else}
+						<button class="face-btn" onclick={openFaceConsent}>
+							<Icon icon="lucide:scan-face" width="16" /> Minhas fotos
+						</button>
+					{/if}
+					<button class="face-info-btn" onclick={() => faceInfoOpen = !faceInfoOpen} aria-label="Como funciona">
+						<Icon icon="lucide:info" width="14" />
 					</button>
-				{:else}
-					<button class="face-btn" onclick={openFaceConsent}>
-						<Icon icon="lucide:scan-face" width="16" /> Minhas fotos
-					</button>
-				{/if}
-				<button class="face-info-btn" onclick={() => faceInfoOpen = !faceInfoOpen} aria-label="Como funciona">
-					<Icon icon="lucide:info" width="14" />
-				</button>
+				</div>
+				<span class="face-feature-label">por IA</span>
 			</div>
 
 			{#if packagePrice}
@@ -1307,6 +1315,63 @@
 	}
 
 	.face-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+	.face-feature-wrap {
+		position: relative;
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		background: linear-gradient(135deg, rgba(61,201,13,0.08) 0%, rgba(61,201,13,0.03) 100%);
+		border: 1px solid rgba(61,201,13,0.2);
+		border-radius: var(--radius-md);
+		padding: 5px 10px 5px 6px;
+	}
+
+	.face-new-badge {
+		display: flex;
+		align-items: center;
+		gap: 3px;
+		background: var(--accent);
+		color: #050507;
+		font-size: 0.65rem;
+		font-weight: 800;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		padding: 2px 6px 2px 4px;
+		border-radius: var(--radius-xs);
+		position: relative;
+	}
+
+	.face-new-pulse {
+		width: 5px;
+		height: 5px;
+		border-radius: 50%;
+		background: #050507;
+		display: inline-block;
+		position: relative;
+	}
+
+	.face-new-pulse::before {
+		content: '';
+		position: absolute;
+		inset: -3px;
+		border-radius: 50%;
+		background: rgba(5,5,7,0.3);
+		animation: pulseRing 1.5s ease-out infinite;
+	}
+
+	@keyframes pulseRing {
+		0% { transform: scale(0.8); opacity: 1; }
+		100% { transform: scale(2); opacity: 0; }
+	}
+
+	.face-feature-label {
+		font-size: 0.7rem;
+		color: var(--accent);
+		font-weight: 600;
+		opacity: 0.7;
+		white-space: nowrap;
+	}
 
 	.face-btn-wrap {
 		display: flex;
