@@ -15,7 +15,16 @@ export const POST: RequestHandler = async ({ request }) => {
 		throw error(400, 'eventId e selfieBase64 são obrigatórios');
 	}
 
-	const matches = await searchFacesByBase64(body.eventId, body.selfieBase64);
+	let matches: Array<{ photo_id: string; similarity: number }>;
+	try {
+		matches = await searchFacesByBase64(body.eventId, body.selfieBase64);
+	} catch (err: unknown) {
+		const msg = (err as Error).message ?? '';
+		if (msg.includes('face') || msg.includes('rosto') || msg.includes('detecta')) {
+			return json({ photos: [], hint: 'Nenhum rosto detectado. Tente com melhor iluminação e rosto centralizado.' });
+		}
+		throw error(500, msg);
+	}
 
 	if (matches.length === 0) {
 		return json({ photos: [] });

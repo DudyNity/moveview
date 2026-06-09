@@ -31,7 +31,13 @@ export async function searchFacesByBase64(
 		headers: { 'Content-Type': 'application/json', 'x-api-key': FACE_SERVICE_KEY },
 		body: JSON.stringify({ event_id: eventId, selfie_base64: selfieBase64, threshold })
 	});
-	if (!res.ok) throw new Error(await res.text());
+
+	if (!res.ok) {
+		const body = await res.json().catch(() => ({ detail: 'Erro desconhecido' }));
+		const msg = body.detail ?? 'Erro no serviço de reconhecimento facial';
+		throw new Error(msg);
+	}
+
 	const data = await res.json();
 	return data.matches ?? [];
 }

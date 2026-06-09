@@ -171,6 +171,7 @@
 			if (!res.ok) throw new Error((await res.json()).message ?? 'Erro na busca');
 			const json = await res.json();
 			faceResults = json.photos;
+			if (json.hint) faceError = json.hint;
 		} catch (err: unknown) {
 			faceError = (err as Error).message ?? 'Erro ao buscar fotos';
 		} finally {
@@ -202,6 +203,7 @@
 			if (!res.ok) throw new Error((await res.json()).message ?? 'Erro na busca');
 			const json = await res.json();
 			faceResults = json.photos;
+			if (json.hint) faceError = json.hint;
 		} catch (err: unknown) {
 			faceError = (err as Error).message ?? 'Erro ao buscar fotos';
 		} finally {
